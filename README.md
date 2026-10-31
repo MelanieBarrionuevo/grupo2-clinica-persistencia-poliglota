@@ -28,7 +28,7 @@ Usuario → Web → API REST → módulos de dominio → gestores
 | Búsqueda (proyección del catálogo) | Typesense | Eventual |
 | Sesiones, filtros y borradores | Redis (TTL) | Efímera |
 
-La selección se justifica en la Fase 2 (matriz comparativa). Ver [docs/fase1-comprension.md](docs/fase1-comprension.md).
+La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs/fase2-investigacion.md) (matriz comparativa, alternativas descartadas y pruebas pequeñas en [`poc/`](poc/README.md)). El análisis del caso está en [docs/fase1-comprension.md](docs/fase1-comprension.md).
 
 ## Stack tecnológico
 
@@ -58,8 +58,10 @@ La selección se justifica en la Fase 2 (matriz comparativa). Ver [docs/fase1-co
 │   ├── mongo/      Inicialización del catálogo
 │   └── seed/       Datos semilla de demostración
 ├── tests/          Pruebas funcionales y de concurrencia
+├── poc/            Pruebas pequeñas de la Fase 2 (una por gestor)
 ├── docs/
 │   ├── fase1-comprension.md
+│   ├── fase2-investigacion.md
 │   ├── diagramas/
 │   ├── evidencias/ Capturas y video de la defensa
 │   └── enunciado/
@@ -72,7 +74,7 @@ La selección se justifica en la Fase 2 (matriz comparativa). Ver [docs/fase1-co
 | Fase | Producto de control | Estado |
 | --- | --- | --- |
 | 1. Comprensión | Mapa de dominio y flujos | Completada |
-| 2. Investigación | Matriz argumentada de selección de gestores | Pendiente |
+| 2. Investigación | Matriz argumentada de selección de gestores | Completada |
 | 3. Diseño | Modelo de datos, contratos de API, diagramas | Pendiente |
 | 4. Implementación | Repositorio ejecutable con Docker Compose | Pendiente |
 | 5. Validación | Pruebas y evidencias | Pendiente |

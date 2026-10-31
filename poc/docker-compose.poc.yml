@@ -1,0 +1,47 @@
+# Pruebas pequeñas de la Fase 2. NO es el Compose final (ese llega en la Fase 4).
+# Los puertos se publican solo en 127.0.0.1 para poder ejecutar los scripts desde el equipo.
+# Credenciales ficticias de laboratorio.
+name: clinica-poc
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: poc
+      POSTGRES_USER: poc
+      POSTGRES_PASSWORD: poc
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pg_poc:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poc -d poc"]
+      interval: 3s
+      retries: 20
+
+  mongo:
+    image: mongo:7.0
+    # Replica set de un nodo: necesario para transacciones multi-documento (decisión D-01).
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports: ["127.0.0.1:27017:27017"]
+    volumes: [mongo_poc:/data/db]
+    healthcheck:
+      # Inicializa el replica set la primera vez y luego solo comprueba que está activo.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]}).ok }"]
+      interval: 5s
+      retries: 20
+
+  typesense:
+    image: typesense/typesense:28.0
+    command: ["--data-dir", "/data", "--api-key", "poc-typesense-key", "--enable-cors"]
+    ports: ["127.0.0.1:8108:8108"]
+    volumes: [typesense_poc:/data]
+
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:6379:6379"]
+    volumes: [redis_poc:/data]
+
+volumes:
+  pg_poc:
+  mongo_poc:
+  typesense_poc:
+  redis_poc:
