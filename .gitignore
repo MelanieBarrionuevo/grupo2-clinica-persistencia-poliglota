@@ -1,0 +1,31 @@
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+
+# Dependencias
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Builds
+dist/
+build/
+.next/
+coverage/
+
+# Datos locales de contenedores (si se usan bind mounts)
+data/
+volumes/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
