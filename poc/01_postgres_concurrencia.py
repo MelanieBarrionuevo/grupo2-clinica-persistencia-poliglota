@@ -14,7 +14,10 @@ from datetime import datetime, timedelta, timezone
 import psycopg
 from psycopg import errors
 
-DSN = os.getenv("PG_DSN", "postgresql://poc:poc@localhost:5432/poc")
+DSN = os.getenv(
+    "PG_DSN",
+    "postgresql://poc:poc@127.0.0.1:5432/poc?connect_timeout=5"
+)
 
 ESQUEMA = """
 CREATE EXTENSION IF NOT EXISTS btree_gist;
@@ -63,7 +66,7 @@ CREATE TABLE evento_cita (
 
 def reservar(cupo_id: int, paciente_id: str, clave: str) -> tuple[int, str]:
     """Devuelve (codigo_http, cita_id o mensaje). Una sola transacción local."""
-    with psycopg.connect(DSN) as conn:
+    with psycopg.connect(DSN, autocommit=True) as conn:
         try:
             with conn.transaction():
                 previa = conn.execute(
