@@ -1,7 +1,7 @@
 # Fase 3 · Contratos de API REST — Clínica ambulatoria
 
 **Grupo 2 · Proyecto A · Persistencia políglota**  
-**Estado:** especificación propuesta para implementación en FastAPI. Ninguno de estos endpoints existe todavía en la aplicación final.
+**Estado:** implementado en la Fase 4. Las decisiones marcadas como pendientes en este documento se cerraron en [fase4-implementacion.md](fase4-implementacion.md) §2; la especificación definitiva es la OpenAPI (`/docs`, exportada en [openapi.json](openapi.json)).
 
 ## 1. Convenciones generales
 

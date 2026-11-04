@@ -66,7 +66,7 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 │   ├── evidencias/ Capturas y video de la defensa
 │   └── enunciado/
 ├── .env.example
-└── docker-compose.yml   (Fase 4)
+└── docker-compose.yml
 ```
 
 ## Avance por fases
@@ -75,18 +75,74 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 | --- | --- | --- |
 | 1. Comprensión | Mapa de dominio y flujos | Completada |
 | 2. Investigación | Matriz argumentada de selección de gestores | Completada |
-| 3. Diseño | Modelo de datos, contratos de API, diagramas | Pendiente |
-| 4. Implementación | Repositorio ejecutable con Docker Compose | Pendiente |
+| 3. Diseño | Modelo de datos, contratos de API, diagramas | Completada |
+| 4. Implementación | Repositorio ejecutable con Docker Compose | Completada · [docs/fase4-implementacion.md](docs/fase4-implementacion.md) |
 | 5. Validación | Pruebas y evidencias | Pendiente |
 | 6. Defensa | Exposición y memoria técnica | Pendiente |
 
 ## Ejecución
 
-> Se completará en la Fase 4.
+### Requisitos previos
+
+- Docker Desktop (o Docker Engine) con Docker Compose v2.
+- Puertos libres en el equipo: `3000` (web) y `8000` (API). Las bases de datos no publican puertos.
+- Opcional, para las pruebas automatizadas: Python 3.11+.
+
+### Arranque limpio
 
 ```bash
-cp .env.example .env      # ajustar valores ficticios
+cp .env.example .env          # cambiar los valores ficticios si se desea
 docker compose up --build -d
+docker compose ps             # mongo-init y seed terminan con "Exited (0)": es lo esperado
+```
+
+La primera vez tarda unos minutos (descarga de imágenes y build de la web). Al terminar:
+
+| Qué | URL |
+| --- | --- |
+| Web | http://localhost:3000 |
+| API · documentación OpenAPI | http://localhost:8000/docs |
+| Salud | http://localhost:8000/api/v1/health |
+
+### Usuarios de demostración (ficticios)
+
+Contraseña de todos: **`Demo123!`** (también hay botones de acceso rápido en la pantalla de login).
+
+| Usuario | Rol |
+| --- | --- |
+| `paciente1`, `paciente2`, `paciente3` | Paciente |
+| `recepcion` | Recepcionista |
+| `admin` | Administrador |
+
+La semilla crea 4 especialidades, 3 sedes, 4 servicios, 5 profesionales y franjas para los próximos 5 días hábiles. Es idempotente: no duplica ni borra.
+
+### Reinicio y limpieza
+
+```bash
+docker compose restart                 # reinicia todo; citas y catálogo se conservan
+docker compose down                    # detiene y elimina contenedores; LOS DATOS SE CONSERVAN (volúmenes)
+docker compose up -d                   # vuelve a levantar con los mismos datos
+docker compose run --rm seed           # vuelve a sembrar lo que falte (p. ej. nuevas franjas futuras)
+
+# ⚠️ Borrado TOTAL de datos (citas, catálogo e índice). Solo si se quiere empezar de cero:
+docker compose down -v
+```
+
+`db/postgres/*.sql` solo se aplica cuando el volumen de PostgreSQL está vacío (primer arranque o tras `down -v`).
+
+### Pruebas
+
+```bash
+pip install -r tests/requirements.txt
+pytest -v -s tests/
+```
+
+Escenarios de fallo y reinicio (P5) y comandos para inspeccionar cada gestor: [tests/README.md](tests/README.md).
+
+### Desarrollo de la web sin Docker
+
+```bash
+cd web && npm install && npm run dev    # http://localhost:5173, con proxy de /api hacia localhost:8000
 ```
 
 Nunca subir el archivo `.env` al repositorio.
