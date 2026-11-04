@@ -1,16 +1,30 @@
-# Pruebas · Fase 4/5
+# Pruebas · Fases 4 y 5
 
-## 1. Pruebas automatizadas (P1–P4 y reglas de negocio)
+Matriz completa, resultados y hallazgos: [docs/fase5-validacion.md](../docs/fase5-validacion.md).
+
+## 1. Pruebas automatizadas
 
 Con el sistema en marcha (`docker compose up --build -d`):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r tests/requirements.txt
-pytest -v -s tests/
+
+python tests/reporte.py              # suite + informe en docs/evidencias/fase5/ (no detiene contenedores)
+python tests/reporte.py --fallos     # además P5: detiene y levanta contenedores
+pytest -v -s tests/                  # lo mismo sin informe
 ```
 
-`API_URL` permite apuntar a otra dirección (por defecto `http://localhost:8000/api/v1`). Las pruebas crean su propio catálogo con nombres únicos, así que se pueden repetir sin limpiar datos.
+| Archivo | Contenido |
+| --- | --- |
+| `test_flujos.py` | 14 pruebas de la Fase 4: P1–P4, idempotencia, reprogramación, roles, holds, desactivación, TTL |
+| `test_validacion.py` | Fase 5, V-01 a V-18: retraso medido, convergencia de la búsqueda, concurrencia e invariante de la agenda, la API no confía en el navegador, matriz de permisos, errores sin secretos |
+| `test_fallos.py` | Fase 5, F-01 a F-07 (P5): reinicio completo y caída de cada gestor y del sincronizador. Solo con `--fallos` |
+| `reporte.py` | Ejecuta la suite y escribe `docs/evidencias/fase5/resultados-AAAAMMDD-HHMM.md` |
+
+`API_URL` permite apuntar a otra dirección (por defecto `http://localhost:8000/api/v1`). `CONTROL_CMD` cambia el comando con el que las pruebas de fallos detienen servicios (por defecto `docker compose {accion} {servicio}`). Las pruebas crean su propio catálogo con nombres únicos, así que se pueden repetir sin limpiar datos.
+
+### Pruebas de la Fase 4
 
 | Prueba | Qué verifica |
 | --- | --- |
@@ -25,7 +39,9 @@ pytest -v -s tests/
 | `test_roles_…`, `test_paciente_solo_ve_…` | Autorización en la API, no en la web |
 | `test_filtros_y_borrador_con_ttl` | Redis con TTL y aislamiento por usuario |
 
-## 2. P5 · Reinicios y caídas (manual, para la defensa)
+## 2. P5 · Reinicios y caídas a mano (para mostrar en vivo en la defensa)
+
+`test_fallos.py` automatiza estos escenarios. Los comandos sirven para repetirlos frente al docente mirando la web.
 
 ```bash
 # a) Persistencia tras reinicio completo (sin -v: los volúmenes se conservan)
@@ -37,7 +53,7 @@ docker compose stop typesense
 #    → Inicio muestra "Buscador no disponible" y lista desde MongoDB; /api/v1/health = "degradado".
 #    → Reservar sigue funcionando. Editar un profesional deja eventos pendientes en /tecnico.
 docker compose start typesense
-#    → En segundos los eventos pendientes pasan a procesados (backoff máx. 60 s).
+#    → En pocos segundos los eventos pendientes pasan a procesados (el worker reintenta cada ~5 s).
 
 # c) Pérdida total del índice
 docker compose rm -sf typesense && docker volume rm clinica_typesense_data && docker compose up -d typesense

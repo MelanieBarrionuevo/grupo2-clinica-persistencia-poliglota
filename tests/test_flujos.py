@@ -68,7 +68,7 @@ def test_validaciones_de_agenda(recepcion, paciente1, escenario):
 
 
 # ------------------------------------------------------------------ P1: alta → búsqueda
-def test_p1_profesional_registrado_aparece_en_busqueda(anonimo, escenario):
+def test_p1_profesional_registrado_aparece_en_busqueda(anonimo, escenario, record_property):
     def aparece():
         r = anonimo.get("/buscar", params={"q": escenario["nombre_profesional"]})
         return r.status_code == 200 and any(x["profesional_id"] == escenario["profesional_id"]
@@ -76,6 +76,7 @@ def test_p1_profesional_registrado_aparece_en_busqueda(anonimo, escenario):
     ok, segundos = esperar(aparece)
     assert ok, "El profesional no apareció en la búsqueda"
     print(f"\n[P1] Visible en búsqueda tras {segundos:.2f}s")
+    record_property("p1_retraso_s", round(segundos, 2))
 
 
 # ------------------------------------------------------------------ P3: concurrencia
@@ -191,7 +192,7 @@ def test_bloqueo_temporal_hold(paciente1, paciente2, escenario):
 
 
 # ------------------------------------------------------------------ P2 y flujo 5: cambio en la fuente oficial
-def test_p2_cambio_de_sede_se_refleja_en_busqueda(admin, anonimo):
+def test_p2_cambio_de_sede_se_refleja_en_busqueda(admin, anonimo, record_property):
     sufijo = uuid.uuid4().hex[:6]
     esp = admin.post("/especialidades", json={"nombre": f"Esp Sync {sufijo}"}).json()["id"]
     sede_a = admin.post("/sedes", json={"nombre": f"Sede A {sufijo}", "direccion_ficticia": "A 1"}).json()["id"]
@@ -211,6 +212,7 @@ def test_p2_cambio_de_sede_se_refleja_en_busqueda(admin, anonimo):
     ok, segundos = esperar(en_sede(sede_b))
     assert ok, "La búsqueda no reflejó el cambio de sede"
     print(f"\n[P2] Cambio de sede reflejado en la búsqueda tras {segundos:.2f}s")
+    record_property("p2_retraso_cambio_sede_s", round(segundos, 2))
     assert not en_sede(sede_a)()
     estado = admin.get("/sync/estado").json()
     assert any(e["entidad_id"] == prof["id"] and e["version"] == 2 and e["retraso_ms"] is not None

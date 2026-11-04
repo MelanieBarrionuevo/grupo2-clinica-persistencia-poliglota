@@ -1,5 +1,5 @@
 
-<escape>// Clínica ambulatoria · Grupo 2
+// Clínica ambulatoria · Grupo 2
 // Fase 3/4: estructura del catálogo MongoDB 7 para mongosh.
 // Ejecutar solamente en el entorno final, no sobre catalogo_poc.
 // Idempotente en colecciones e índices; NO elimina ni inserta documentos.
@@ -164,4 +164,4 @@ dbCatalogo.outbox.createIndex(
 
 print("OK · Catálogo MongoDB inicializado en BD: " + nombreBD);
 print("Colecciones: " + dbCatalogo.getCollectionNames().sort().join(", "));
-print("ATENCIÓN: Este archivo no crea el worker ni ejecuta la sincronización.");</escape>
+print("ATENCIÓN: Este archivo no crea el worker ni ejecuta la sincronización.");
