@@ -60,10 +60,10 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 ├── tests/          Pruebas funcionales y de concurrencia
 ├── poc/            Pruebas pequeñas de la Fase 2 (una por gestor)
 ├── docs/
-│   ├── fase1-comprension.md
-│   ├── fase2-investigacion.md
+│   ├── fase1-comprension.md … fase5-validacion.md
+│   ├── api-contratos.md, openapi.json
 │   ├── diagramas/
-│   ├── evidencias/ Capturas y video de la defensa
+│   ├── evidencias/ Pruebas de concepto (fase2) e informes y capturas de validación (fase5)
 │   └── enunciado/
 ├── .env.example
 └── docker-compose.yml
@@ -77,7 +77,7 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 | 2. Investigación | Matriz argumentada de selección de gestores | Completada |
 | 3. Diseño | Modelo de datos, contratos de API, diagramas | Completada |
 | 4. Implementación | Repositorio ejecutable con Docker Compose | Completada · [docs/fase4-implementacion.md](docs/fase4-implementacion.md) |
-| 5. Validación | Pruebas y evidencias | Pendiente |
+| 5. Validación | Pruebas y evidencias | En curso · [docs/fase5-validacion.md](docs/fase5-validacion.md) (falta la corrida oficial con Docker) |
 | 6. Defensa | Exposición y memoria técnica | Pendiente |
 
 ## Ejecución
@@ -134,10 +134,11 @@ docker compose down -v
 
 ```bash
 pip install -r tests/requirements.txt
-pytest -v -s tests/
+python tests/reporte.py              # suite completa + informe en docs/evidencias/fase5/
+python tests/reporte.py --fallos     # además P5: detiene y levanta contenedores
 ```
 
-Escenarios de fallo y reinicio (P5) y comandos para inspeccionar cada gestor: [tests/README.md](tests/README.md).
+Matriz de pruebas y resultados: [docs/fase5-validacion.md](docs/fase5-validacion.md). Comandos para inspeccionar cada gestor: [tests/README.md](tests/README.md).
 
 ### Desarrollo de la web sin Docker
 
