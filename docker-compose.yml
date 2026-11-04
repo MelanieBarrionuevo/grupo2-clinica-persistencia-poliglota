@@ -1,0 +1,166 @@
+# Clínica ambulatoria · Grupo 2 · Fase 4
+# Arranque:  cp .env.example .env  &&  docker compose up --build -d
+# Web:       http://localhost:3000      API (OpenAPI): http://localhost:8000/docs
+#
+# Los gestores NO publican puertos al exterior: solo la API y la web.
+# Para inspeccionarlos se usa `docker compose exec <servicio> ...` (ver README).
+name: clinica
+
+x-api-env: &api-env
+  POSTGRES_HOST: postgres
+  POSTGRES_DB: ${POSTGRES_DB:-clinica}
+  POSTGRES_USER: ${POSTGRES_USER:-clinica_app}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+  MONGO_URI: mongodb://mongo:27017/?replicaSet=rs0
+  MONGO_DB: ${MONGO_DB:-catalogo}
+  TYPESENSE_HOST: typesense
+  TYPESENSE_PORT: "8108"
+  TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?Definir TYPESENSE_API_KEY en .env}
+  REDIS_HOST: redis
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?Definir REDIS_PASSWORD en .env}
+  JWT_SECRET: ${JWT_SECRET:?Definir JWT_SECRET en .env}
+  TTL_BORRADOR_SEGUNDOS: ${TTL_BORRADOR_SEGUNDOS:-1800}
+  TTL_BLOQUEO_CUPO_SEGUNDOS: ${TTL_BLOQUEO_CUPO_SEGUNDOS:-300}
+  SYNC_INTERVALO_MS: ${SYNC_INTERVALO_MS:-1000}
+  CLINICA_TZ: ${CLINICA_TZ:-America/Guayaquil}
+
+services:
+  # ---------- Agenda, cupos, citas e historial (fuente oficial, consistencia fuerte) ----------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-clinica}
+      POSTGRES_USER: ${POSTGRES_USER:-clinica_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # Solo se ejecutan cuando el volumen está vacío (primer arranque).
+      - ./db/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [interna]
+
+  # ---------- Catálogo (fuente oficial) + outbox. Replica set de un nodo para transacciones ----------
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+    networks: [interna]
+
+  # Tarea única: inicia el replica set (si hace falta) y aplica validadores e índices.
+  mongo-init:
+    image: mongo:7.0
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_DB: ${MONGO_DB:-catalogo}
+    volumes:
+      - ./db/mongo:/init:ro
+    entrypoint: ["bash", "/init/scripts/iniciar_replica.sh"]
+    networks: [interna]
+
+  # ---------- Proyección de búsqueda (derivada, consistencia eventual) ----------
+  typesense:
+    image: typesense/typesense:28.0
+    restart: unless-stopped
+    command: ["--data-dir", "/data", "--api-key", "${TYPESENSE_API_KEY}"]
+    volumes:
+      - typesense_data:/data
+    networks: [interna]
+
+  # ---------- Estado temporal: filtros y borradores con TTL ----------
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" --no-auth-warning ping | grep PONG"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks: [interna]
+
+  # ---------- API REST (único punto de entrada de la web) ----------
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      typesense:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/ping', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    networks: [interna]
+
+  # Tarea única: datos semilla ficticios (idempotente: no duplica ni borra).
+  seed:
+    build: ./api
+    restart: "no"
+    command: ["python", "-m", "app.seed"]
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    networks: [interna]
+
+  # ---------- Sincronizador outbox (MongoDB) → Typesense ----------
+  sync:
+    build:
+      context: .
+      dockerfile: sync/Dockerfile
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+      typesense:
+        condition: service_started
+    networks: [interna]
+
+  # ---------- Web (React compilado, servido por nginx que hace proxy de /api) ----------
+  web:
+    build: ./web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:80"
+    networks: [interna]
+
+networks:
+  interna:
+    driver: bridge
+
+volumes:
+  pg_data:
+  mongo_data:
+  typesense_data:

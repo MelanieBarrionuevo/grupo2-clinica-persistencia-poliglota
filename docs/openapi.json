@@ -1,0 +1,2615 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Cl\u00ednica ambulatoria \u00b7 API",
+        "description": "Persistencia pol\u00edglota: cat\u00e1logo en MongoDB, agenda y citas en PostgreSQL, b\u00fasqueda en Typesense (proyecci\u00f3n por outbox) y estado temporal en Redis. Usuarios de demostraci\u00f3n: ver README.",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/v1/health": {
+            "get": {
+                "tags": [
+                    "Salud y sincronizador"
+                ],
+                "summary": "Health",
+                "operationId": "health_api_v1_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sync/estado": {
+            "get": {
+                "tags": [
+                    "Salud y sincronizador"
+                ],
+                "summary": "Estado Sincronizador",
+                "description": "Pantalla t\u00e9cnica: eventos de outbox pendientes/procesados, retraso y latido del worker.",
+                "operationId": "estado_sincronizador_api_v1_sync_estado_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/sync/reindexar": {
+            "post": {
+                "tags": [
+                    "Salud y sincronizador"
+                ],
+                "summary": "Reindexar",
+                "description": "Reconstruye toda la proyecci\u00f3n de b\u00fasqueda desde MongoDB (recuperaci\u00f3n ante p\u00e9rdida del \u00edndice).",
+                "operationId": "reindexar_api_v1_sync_reindexar_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Identidad"
+                ],
+                "summary": "Login",
+                "operationId": "login_api_v1_auth_login_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginIn"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/yo": {
+            "get": {
+                "tags": [
+                    "Identidad"
+                ],
+                "summary": "Yo",
+                "operationId": "yo_api_v1_auth_yo_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/especialidades": {
+            "get": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Listar Especialidades",
+                "operationId": "listar_especialidades_api_v1_especialidades_get",
+                "parameters": [
+                    {
+                        "name": "incluir_inactivas",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Incluir Inactivas"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Post Especialidad",
+                "operationId": "post_especialidad_api_v1_especialidades_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EspecialidadIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/especialidades/{especialidad_id}": {
+            "patch": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Patch Especialidad",
+                "operationId": "patch_especialidad_api_v1_especialidades__especialidad_id__patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "especialidad_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Especialidad Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EspecialidadPatch"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sedes": {
+            "get": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Listar Sedes",
+                "operationId": "listar_sedes_api_v1_sedes_get",
+                "parameters": [
+                    {
+                        "name": "incluir_inactivas",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Incluir Inactivas"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Post Sede",
+                "operationId": "post_sede_api_v1_sedes_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SedeIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sedes/{sede_id}": {
+            "patch": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Patch Sede",
+                "operationId": "patch_sede_api_v1_sedes__sede_id__patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "sede_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Sede Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SedePatch"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/servicios": {
+            "get": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Listar Servicios",
+                "operationId": "listar_servicios_api_v1_servicios_get",
+                "parameters": [
+                    {
+                        "name": "especialidad_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Especialidad Id"
+                        }
+                    },
+                    {
+                        "name": "incluir_inactivos",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Incluir Inactivos"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Post Servicio",
+                "operationId": "post_servicio_api_v1_servicios_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServicioIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/servicios/{servicio_id}": {
+            "patch": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Patch Servicio",
+                "operationId": "patch_servicio_api_v1_servicios__servicio_id__patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "servicio_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Servicio Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServicioPatch"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profesionales": {
+            "get": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Listar Profesionales",
+                "description": "Listado directo desde la fuente oficial (MongoDB).\n\nLo usa administraci\u00f3n y la web como **modo degradado** cuando el buscador (Typesense) no responde.",
+                "operationId": "listar_profesionales_api_v1_profesionales_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "especialidad_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Especialidad Id"
+                        }
+                    },
+                    {
+                        "name": "sede_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Sede Id"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "maxLength": 80
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Q"
+                        }
+                    },
+                    {
+                        "name": "incluir_inactivos",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Incluir Inactivos"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Post Profesional",
+                "operationId": "post_profesional_api_v1_profesionales_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProfesionalIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/profesionales/{profesional_id}": {
+            "get": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Get Profesional",
+                "operationId": "get_profesional_api_v1_profesionales__profesional_id__get",
+                "parameters": [
+                    {
+                        "name": "profesional_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Profesional Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Cat\u00e1logo (MongoDB)"
+                ],
+                "summary": "Patch Profesional",
+                "operationId": "patch_profesional_api_v1_profesionales__profesional_id__patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "profesional_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Profesional Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProfesionalPatch"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/buscar": {
+            "get": {
+                "tags": [
+                    "B\u00fasqueda (Typesense)"
+                ],
+                "summary": "Buscar",
+                "operationId": "buscar_api_v1_buscar_get",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 80,
+                            "description": "Texto libre (tolera errores de tipeo)",
+                            "default": "",
+                            "title": "Q"
+                        },
+                        "description": "Texto libre (tolera errores de tipeo)"
+                    },
+                    {
+                        "name": "especialidad_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Especialidad Id"
+                        }
+                    },
+                    {
+                        "name": "sede_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Sede Id"
+                        }
+                    },
+                    {
+                        "name": "modalidad",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "PRESENCIAL",
+                                        "TELECONSULTA"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Modalidad"
+                        }
+                    },
+                    {
+                        "name": "idioma",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "maxLength": 10
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Idioma"
+                        }
+                    },
+                    {
+                        "name": "ordenar",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "enum": [
+                                "relevancia",
+                                "nombre"
+                            ],
+                            "type": "string",
+                            "default": "relevancia",
+                            "title": "Ordenar"
+                        }
+                    },
+                    {
+                        "name": "pagina",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "default": 1,
+                            "title": "Pagina"
+                        }
+                    },
+                    {
+                        "name": "por_pagina",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 50,
+                            "minimum": 1,
+                            "default": 12,
+                            "title": "Por Pagina"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cupos": {
+            "get": {
+                "tags": [
+                    "Agenda y cupos (PostgreSQL)"
+                ],
+                "summary": "Listar Cupos",
+                "description": "Franjas le\u00eddas SIEMPRE de PostgreSQL (nunca de Typesense ni Redis).",
+                "operationId": "listar_cupos_api_v1_cupos_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "profesional_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Profesional Id"
+                        }
+                    },
+                    {
+                        "name": "sede_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Sede Id"
+                        }
+                    },
+                    {
+                        "name": "servicio_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Servicio Id"
+                        }
+                    },
+                    {
+                        "name": "desde",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Desde"
+                        }
+                    },
+                    {
+                        "name": "hasta",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Hasta"
+                        }
+                    },
+                    {
+                        "name": "solo_disponibles",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Solo Disponibles"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Agenda y cupos (PostgreSQL)"
+                ],
+                "summary": "Publicar Cupos",
+                "operationId": "publicar_cupos_api_v1_cupos_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PublicarCupos"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cupos/{cupo_id}/bloquear": {
+            "post": {
+                "tags": [
+                    "Agenda y cupos (PostgreSQL)"
+                ],
+                "summary": "Bloquear Cupo",
+                "description": "Hold temporal mientras el usuario completa el formulario de reserva (RN-07).\n\nUn usuario mantiene como m\u00e1ximo un bloqueo: al bloquear otro, se libera el anterior.",
+                "operationId": "bloquear_cupo_api_v1_cupos__cupo_id__bloquear_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "cupo_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Cupo Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cupos/{cupo_id}/liberar": {
+            "post": {
+                "tags": [
+                    "Agenda y cupos (PostgreSQL)"
+                ],
+                "summary": "Liberar Cupo",
+                "operationId": "liberar_cupo_api_v1_cupos__cupo_id__liberar_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "cupo_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "title": "Cupo Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/agenda": {
+            "get": {
+                "tags": [
+                    "Agenda y cupos (PostgreSQL)"
+                ],
+                "summary": "Agenda",
+                "description": "Vista de recepci\u00f3n: franjas del d\u00eda con su cita activa (si existe).",
+                "operationId": "agenda_api_v1_agenda_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "fecha",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "description": "D\u00eda local de la cl\u00ednica, YYYY-MM-DD",
+                            "title": "Fecha"
+                        },
+                        "description": "D\u00eda local de la cl\u00ednica, YYYY-MM-DD"
+                    },
+                    {
+                        "name": "profesional_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Profesional Id"
+                        }
+                    },
+                    {
+                        "name": "sede_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Sede Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/citas": {
+            "post": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Reservar",
+                "operationId": "reservar_api_v1_citas_post",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "description": "UUID generado por el cliente",
+                            "title": "Idempotency-Key"
+                        },
+                        "description": "UUID generado por el cliente"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReservaIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Reintento idempotente: misma cita"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Listar Citas",
+                "operationId": "listar_citas_api_v1_citas_get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "estado",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "pattern": "^(PENDIENTE|CONFIRMADA|CANCELADA)$"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Estado"
+                        }
+                    },
+                    {
+                        "name": "profesional_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Profesional Id"
+                        }
+                    },
+                    {
+                        "name": "limite",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 500,
+                            "minimum": 1,
+                            "default": 100,
+                            "title": "Limite"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/mias": {
+            "get": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Mis Citas",
+                "operationId": "mis_citas_api_v1_citas_mias_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/citas/{cita_id}": {
+            "get": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Detalle Cita",
+                "operationId": "detalle_cita_api_v1_citas__cita_id__get",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "cita_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Cita Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/{cita_id}/confirmar": {
+            "patch": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Confirmar",
+                "operationId": "confirmar_api_v1_citas__cita_id__confirmar_patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "cita_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Cita Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/{cita_id}/cancelar": {
+            "patch": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Cancelar",
+                "operationId": "cancelar_api_v1_citas__cita_id__cancelar_patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "cita_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Cita Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/citas/{cita_id}/reprogramar": {
+            "patch": {
+                "tags": [
+                    "Citas (PostgreSQL)"
+                ],
+                "summary": "Reprogramar",
+                "description": "Mueve la cita a otra franja del mismo servicio en una sola transacci\u00f3n.\n\nRegla de estado (decisi\u00f3n Fase 4): si reprograma recepci\u00f3n se conserva el estado;\nsi reprograma el paciente vuelve a PENDIENTE para que recepci\u00f3n la confirme de nuevo.",
+                "operationId": "reprogramar_api_v1_citas__cita_id__reprogramar_patch",
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "cita_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Cita Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReprogramarIn"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pacientes": {
+            "get": {
+                "tags": [
+                    "Citas (PostgreSQL)",
+                    "Identidad"
+                ],
+                "summary": "Pacientes",
+                "operationId": "pacientes_api_v1_pacientes_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/sesiones/filtros": {
+            "get": {
+                "tags": [
+                    "Sesiones y preferencias (Redis)"
+                ],
+                "summary": "Leer Filtros",
+                "operationId": "leer_filtros_api_v1_sesiones_filtros_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Sesiones y preferencias (Redis)"
+                ],
+                "summary": "Guardar Filtros",
+                "operationId": "guardar_filtros_api_v1_sesiones_filtros_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Filtros"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/sesiones/borrador": {
+            "get": {
+                "tags": [
+                    "Sesiones y preferencias (Redis)"
+                ],
+                "summary": "Leer Borrador",
+                "operationId": "leer_borrador_api_v1_sesiones_borrador_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Sesiones y preferencias (Redis)"
+                ],
+                "summary": "Guardar Borrador",
+                "operationId": "guardar_borrador_api_v1_sesiones_borrador_put",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Borrador"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Sesiones y preferencias (Redis)"
+                ],
+                "summary": "Borrar Borrador",
+                "operationId": "borrar_borrador_api_v1_sesiones_borrador_delete",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "HTTPBearer": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Borrador": {
+                "properties": {
+                    "profesional_id": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "minLength": 1,
+                        "title": "Profesional Id"
+                    },
+                    "servicio_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 60
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Servicio Id"
+                    },
+                    "cupo_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer",
+                                "minimum": 1.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cupo Id"
+                    },
+                    "nota": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "title": "Nota",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "profesional_id"
+                ],
+                "title": "Borrador"
+            },
+            "EspecialidadIn": {
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "minLength": 3,
+                        "title": "Nombre"
+                    },
+                    "descripcion": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "title": "Descripcion",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "nombre"
+                ],
+                "title": "EspecialidadIn"
+            },
+            "EspecialidadPatch": {
+                "properties": {
+                    "nombre": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 80,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Nombre"
+                    },
+                    "descripcion": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 300
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Descripcion"
+                    },
+                    "activo": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Activo"
+                    }
+                },
+                "type": "object",
+                "title": "EspecialidadPatch"
+            },
+            "Filtros": {
+                "properties": {
+                    "texto": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "title": "Texto",
+                        "default": ""
+                    },
+                    "especialidad_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 60
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Especialidad Id"
+                    },
+                    "sede_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 60
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sede Id"
+                    },
+                    "modalidad": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 20
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Modalidad"
+                    },
+                    "ordenar": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 20
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ordenar"
+                    }
+                },
+                "type": "object",
+                "title": "Filtros"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "LoginIn": {
+                "properties": {
+                    "usuario": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "minLength": 3,
+                        "title": "Usuario"
+                    },
+                    "password": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 1,
+                        "title": "Password"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "usuario",
+                    "password"
+                ],
+                "title": "LoginIn"
+            },
+            "ProfesionalIn": {
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 3,
+                        "title": "Nombre"
+                    },
+                    "especialidad_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Especialidad Ids"
+                    },
+                    "sedes": {
+                        "items": {
+                            "$ref": "#/components/schemas/SedeRef"
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Sedes"
+                    },
+                    "idiomas": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Idiomas"
+                    },
+                    "modalidades": {
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "PRESENCIAL",
+                                "TELECONSULTA"
+                            ]
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Modalidades"
+                    },
+                    "certificaciones": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Certificaciones"
+                    },
+                    "atributos": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Atributos"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "nombre",
+                    "especialidad_ids",
+                    "sedes",
+                    "modalidades"
+                ],
+                "title": "ProfesionalIn"
+            },
+            "ProfesionalPatch": {
+                "properties": {
+                    "nombre": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 100,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Nombre"
+                    },
+                    "especialidad_ids": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array",
+                                "minItems": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Especialidad Ids"
+                    },
+                    "sedes": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/SedeRef"
+                                },
+                                "type": "array",
+                                "minItems": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sedes"
+                    },
+                    "idiomas": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Idiomas"
+                    },
+                    "modalidades": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "PRESENCIAL",
+                                        "TELECONSULTA"
+                                    ]
+                                },
+                                "type": "array",
+                                "minItems": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Modalidades"
+                    },
+                    "certificaciones": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Certificaciones"
+                    },
+                    "atributos": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Atributos"
+                    },
+                    "activo": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Activo"
+                    }
+                },
+                "type": "object",
+                "title": "ProfesionalPatch"
+            },
+            "PublicarCupos": {
+                "properties": {
+                    "profesional_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Profesional Id"
+                    },
+                    "sede_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Sede Id"
+                    },
+                    "servicio_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Servicio Id"
+                    },
+                    "inicio": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Inicio",
+                        "description": "Fecha y hora con zona, ej. 2026-11-10T09:00:00-05:00"
+                    },
+                    "cantidad": {
+                        "type": "integer",
+                        "maximum": 24.0,
+                        "minimum": 1.0,
+                        "title": "Cantidad",
+                        "description": "Franjas consecutivas a publicar",
+                        "default": 1
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "profesional_id",
+                    "sede_id",
+                    "servicio_id",
+                    "inicio"
+                ],
+                "title": "PublicarCupos"
+            },
+            "ReprogramarIn": {
+                "properties": {
+                    "nuevo_cupo_id": {
+                        "type": "integer",
+                        "minimum": 1.0,
+                        "title": "Nuevo Cupo Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "nuevo_cupo_id"
+                ],
+                "title": "ReprogramarIn"
+            },
+            "ReservaIn": {
+                "properties": {
+                    "cupo_id": {
+                        "type": "integer",
+                        "minimum": 1.0,
+                        "title": "Cupo Id"
+                    },
+                    "servicio_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Servicio Id",
+                        "description": "Opcional; si se env\u00eda debe coincidir con el del cupo"
+                    },
+                    "paciente_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Paciente Id",
+                        "description": "Solo recepci\u00f3n: paciente para quien reserva"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "cupo_id"
+                ],
+                "title": "ReservaIn"
+            },
+            "SedeIn": {
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "minLength": 3,
+                        "title": "Nombre"
+                    },
+                    "direccion_ficticia": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 3,
+                        "title": "Direccion Ficticia"
+                    },
+                    "latitud": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "maximum": 90.0,
+                                "minimum": -90.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Latitud"
+                    },
+                    "longitud": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "maximum": 180.0,
+                                "minimum": -180.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Longitud"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "nombre",
+                    "direccion_ficticia"
+                ],
+                "title": "SedeIn"
+            },
+            "SedePatch": {
+                "properties": {
+                    "nombre": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 80,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Nombre"
+                    },
+                    "direccion_ficticia": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 200,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Direccion Ficticia"
+                    },
+                    "latitud": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "maximum": 90.0,
+                                "minimum": -90.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Latitud"
+                    },
+                    "longitud": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "maximum": 180.0,
+                                "minimum": -180.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Longitud"
+                    },
+                    "activo": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Activo"
+                    }
+                },
+                "type": "object",
+                "title": "SedePatch"
+            },
+            "SedeRef": {
+                "properties": {
+                    "sede_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Sede Id"
+                    },
+                    "horario_ref": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "title": "Horario Ref",
+                        "default": ""
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "sede_id"
+                ],
+                "title": "SedeRef"
+            },
+            "ServicioIn": {
+                "properties": {
+                    "nombre": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 3,
+                        "title": "Nombre"
+                    },
+                    "especialidad_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "title": "Especialidad Id"
+                    },
+                    "duracion_minutos": {
+                        "type": "integer",
+                        "maximum": 240.0,
+                        "minimum": 5.0,
+                        "title": "Duracion Minutos"
+                    },
+                    "modalidades": {
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "PRESENCIAL",
+                                "TELECONSULTA"
+                            ]
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Modalidades"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "nombre",
+                    "especialidad_id",
+                    "duracion_minutos",
+                    "modalidades"
+                ],
+                "title": "ServicioIn"
+            },
+            "ServicioPatch": {
+                "properties": {
+                    "nombre": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "maxLength": 100,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Nombre"
+                    },
+                    "especialidad_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Especialidad Id"
+                    },
+                    "duracion_minutos": {
+                        "anyOf": [
+                            {
+                                "type": "integer",
+                                "maximum": 240.0,
+                                "minimum": 5.0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Duracion Minutos"
+                    },
+                    "modalidades": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "PRESENCIAL",
+                                        "TELECONSULTA"
+                                    ]
+                                },
+                                "type": "array",
+                                "minItems": 1
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Modalidades"
+                    },
+                    "activo": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Activo"
+                    }
+                },
+                "type": "object",
+                "title": "ServicioPatch"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    },
+                    "input": {
+                        "title": "Input"
+                    },
+                    "ctx": {
+                        "type": "object",
+                        "title": "Context"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        },
+        "securitySchemes": {
+            "HTTPBearer": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        }
+    }
+}
