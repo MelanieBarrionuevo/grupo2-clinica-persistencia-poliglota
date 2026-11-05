@@ -119,20 +119,28 @@ La corrida oficial confirmó la verificación previa y completó la única prueb
 
 El informe automático demuestra el comportamiento de la API. Para la web, el entregable 8 pide capturas o video. Guardarlas en `docs/evidencias/fase5/capturas/` con estos nombres:
 
-| Archivo | Pantalla | Qué debe verse | Estado |
+| Archivo | Pantalla | Qué se ve | Estado |
 | --- | --- | --- | --- |
 | `01-busqueda.png` | Inicio | Resultados con la etiqueta de origen Typesense y el tiempo | ✅ |
-| `01b-busqueda-cercania.png` | Inicio con «Más cercanas» | Tarjetas con «a X km», ordenadas por cercanía | Pendiente |
-| `02-alta-profesional.png` | Administración → Técnico | Profesional creado y su evento procesado con `retraso_ms` | Pendiente |
 | `03a-detalle-franjas.png` | Detalle del profesional | Ficha leída de MongoDB y franjas leídas de PostgreSQL | ✅ |
+| `03b-franja-apartada.png` | Detalle (Paciente 1) | Hold de 5 min sobre la franja, con la clave de idempotencia | ✅ |
 | `03-reserva-ok.png` | Detalle del profesional | Confirmación con el ID de la cita y la franja tachada | ✅ |
-| `04-reserva-409.png` | Detalle (segunda ventana) | Mensaje "La franja ya no está disponible" | Pendiente |
-| `05-mis-citas-historial.png` | Mis citas | Cita cancelada con su historial CREADA → CANCELADA | Pendiente |
-| `06-recepcion-reprogramar.png` | Recepción | Agenda del día tras reprogramar | Pendiente |
-| `07-busqueda-degradada.png` | Inicio con Typesense detenido | Aviso de buscador no disponible y listado desde MongoDB | Pendiente |
-| `08-tecnico-pendientes.png` | Técnico con Typesense detenido | Aviso con la causa del error, eventos pendientes y `/health` degradado | Pendiente |
-| `09-compose-ps.png` | Terminal | `docker compose ps`: gestores sin puertos publicados (RS-02) | Pendiente |
-| `10-reinicio.png` | Terminal + Mis citas | `docker compose restart` y la misma cita después | Pendiente |
+| `04-reserva-bloqueada.png` | Detalle (Paciente 2, otra ventana) | La franja apartada por Paciente 1 aparece «bloqueado» y no se puede tomar (P3) | ✅ |
+| `05-mis-citas-historial.png` | Mis citas | Cita cancelada, franja liberada e historial CREADA → CANCELADA (P4, RN-04) | ✅ |
+| `06a-recepcion-reservar-para.png` | Recepción | Abre en el próximo día con agenda; reservar para un paciente | ✅ |
+| `06-recepcion-reprogramar.png` | Recepción | «Cita movida de #1 a #20 (confirmada)» y la franja #1 libre de nuevo (flujo 4) | ✅ |
+| `06b-historial-reprogramada.png` | Mis citas (Paula) | Historial CREADA → REPROGRAMADA #1 → #20 con actor y hora (RN-06) | ✅ |
+| `07-busqueda-degradada.png` | Inicio con Typesense detenido | Aviso de buscador no disponible y listado desde MongoDB (P5, RN-13) | ✅ |
+| `08-tecnico-pendientes.png` | Técnico con Typesense detenido | Causa del error del sincronizador y 18 eventos pendientes que no se pierden | ✅ |
+| `10-reinicio.png` | Mis citas (Pablo) tras `docker compose restart` | La cita confirmada en la #14, su historial de reprogramación y la cancelada siguen intactas (P5) | ✅ |
+
+Tres comportamientos no tienen captura porque ya los respalda la evidencia automatizada:
+
+- **Orden por cercanía:** prueba V-19.
+- **Alta de profesional y su sincronización a la búsqueda:** pruebas P1, V-01 y V-02, con el retraso medido en la corrida oficial (~1 s).
+- **Gestores sin puertos publicados (RS-02):** la salida de `docker compose ps` incluida en [resultados-20261105-1055.md](evidencias/fase5/resultados-20261105-1055.md), donde solo la API publica puerto (`127.0.0.1:8000`).
+
+La persistencia tras `docker compose restart` (P5) también la demuestra la prueba automatizada **F-01** de la corrida oficial (10,0 s de recuperación, cita e historial intactos). Ojo: `docker compose down -v` sí borra los datos, porque elimina los volúmenes.
 
 ## 6. Hallazgos de la validación
 
