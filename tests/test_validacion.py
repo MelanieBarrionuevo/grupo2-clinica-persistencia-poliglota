@@ -164,14 +164,14 @@ def test_v07_carga_concurrente_mantiene_invariante(paciente1, paciente2, recepci
 
 
 # ================================================================== la API no confía en el navegador (RS-04)
-def test_v08_api_ignora_estado_y_horario_enviados_por_el_navegador(paciente1, recepcion, nuevo_escenario):
+def test_v08_api_ignora_estado_y_horario_enviados_por_el_navegador(paciente1, paciente2, recepcion, nuevo_escenario):
     esc = nuevo_escenario(cantidad=2)
     # Un estado enviado por el navegador se ignora: la cita del paciente nace PENDIENTE.
     r = paciente1.post("/citas", json={"cupo_id": esc["cupos"][0], "estado": "CONFIRMADA"},
                        headers={"Idempotency-Key": str(uuid.uuid4())})
     assert r.status_code == 201 and r.json()["estado"] == "PENDIENTE"
     # Un paciente no puede reservar a nombre de otro.
-    r = paciente1.reservar(esc["cupos"][1], paciente_id="pac-002")
+    r = paciente1.reservar(esc["cupos"][1], paciente_id=paciente2.usuario["id"])
     assert r.status_code == 403
     # El servicio debe coincidir con el de la franja.
     r = paciente1.reservar(esc["cupos"][1], servicio_id="serv-que-no-corresponde")
@@ -235,7 +235,7 @@ def test_v11_token_manipulado_es_rechazado(paciente1):
 def test_v12_paciente_reprograma_vuelve_a_pendiente(paciente3, recepcion, nuevo_escenario):
     """Decisión de Fase 4: recepción crea CONFIRMADA; si el paciente reprograma, vuelve a PENDIENTE."""
     esc = nuevo_escenario(cantidad=2)
-    r = recepcion.reservar(esc["cupos"][0], paciente_id="pac-003")
+    r = recepcion.reservar(esc["cupos"][0], paciente_id=paciente3.usuario["id"])
     assert r.status_code == 201 and r.json()["estado"] == "CONFIRMADA"
     cita = r.json()["cita_id"]
     r = paciente3.patch(f"/citas/{cita}/reprogramar", json={"nuevo_cupo_id": esc["cupos"][1]})
@@ -299,6 +299,27 @@ def test_v18_busqueda_tolera_errores_y_filtra(anonimo):
     assert r["total"] >= 1
     assert all("Medicina general" in x["especialidades"] and "Sede Sur" in x["sedes"] for x in r["resultados"])
     assert "especialidades" in r["facetas"] and "sedes" in r["facetas"]
+
+
+def test_v19_busqueda_ordena_por_cercania(anonimo):
+    """H-01: orden por cercanía con las coordenadas ficticias de las sedes (geopoint en Typesense)."""
+    norte = (-0.15, -78.48)  # coordenadas de la Sede Norte en la semilla
+    r = anonimo.get("/buscar", params={"cerca": f"{norte[0]},{norte[1]}", "por_pagina": 50})
+    assert r.status_code == 200, r.text
+    cuerpo = r.json()
+    assert cuerpo["ordenado_por"] == "cercania"
+    con_distancia = [x for x in cuerpo["resultados"] if x["distancia_km"] is not None]
+    assert con_distancia, "Ningún resultado trae distancia: ¿la proyección tiene el campo ubicaciones?"
+    distancias = [x["distancia_km"] for x in con_distancia]
+    assert distancias == sorted(distancias), distancias
+    assert "Sede Norte" in con_distancia[0]["sedes"] and con_distancia[0]["distancia_km"] < 1
+    # Los que no tienen sede con coordenadas van al final, nunca antes de uno con distancia.
+    vistos_sin = False
+    for x in cuerpo["resultados"]:
+        vistos_sin = vistos_sin or x["distancia_km"] is None
+        assert not (vistos_sin and x["distancia_km"] is not None)
+    for invalido in ("999,1", "abc", "-0.15"):
+        assert anonimo.get("/buscar", params={"cerca": invalido}).status_code == 422
 
 
 @pytest.mark.parametrize("ruta", ["/especialidades", "/sedes", "/servicios", "/profesionales", "/buscar", "/cupos"])

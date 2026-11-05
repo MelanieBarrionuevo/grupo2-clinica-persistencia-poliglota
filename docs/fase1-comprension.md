@@ -30,7 +30,7 @@ Hay tres roles humanos y un actor de sistema. La API valida el rol en cada opera
 | Administrador | Mantener la oferta actualizada | Crear, editar y desactivar profesionales, sedes, especialidades y servicios |
 | Sincronizador (sistema) | Mantener la búsqueda al día | Leer cambios del catálogo y actualizar la proyección de búsqueda |
 
-**Matriz de permisos** (✓ = permitido, P = solo sobre lo propio):
+**Matriz de permisos** (✓ = permitido, P = solo sobre lo propio). Actualizada en la Fase 5 para coincidir con la API: el administrador también confirma citas y recepción también ve la pantalla técnica (solo lectura; reindexar sigue siendo solo del administrador).
 
 | Operación | Paciente | Recepcionista | Administrador |
 | --- | --- | --- | --- |
@@ -39,10 +39,10 @@ Hay tres roles humanos y un actor de sistema. La API valida el rol en cada opera
 | Publicar o bloquear franjas | | ✓ | ✓ |
 | Reservar cita | P | ✓ | |
 | Cancelar cita | P | ✓ | |
-| Confirmar cita | | ✓ | |
+| Confirmar cita | | ✓ | ✓ |
 | Reprogramar cita | P | ✓ | |
 | Ver citas | P | ✓ | ✓ |
-| Ver estado del sincronizador | | | ✓ |
+| Ver estado del sincronizador | | ✓ | ✓ |
 
 ## 3. Glosario del dominio
 

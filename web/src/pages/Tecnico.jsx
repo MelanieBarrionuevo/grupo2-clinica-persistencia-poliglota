@@ -74,6 +74,15 @@ export default function Tecnico() {
         <ErrorApi error={errorSync} />
         {sync && (
           <>
+            {sync.worker.ultimo_error && (
+              <Aviso tipo="aviso">
+                <strong>El sincronizador no puede completar su ciclo</strong> desde las {hora(sync.worker.ultimo_error_en)}:{' '}
+                <code>{sync.worker.ultimo_error}</code>.{' '}
+                {sync.pendientes > 0
+                  ? `Los ${sync.pendientes} evento(s) pendientes no se pierden: se aplicarán solos cuando el servicio vuelva.`
+                  : 'Cuando el servicio vuelva, el sincronizador retomará solo.'}
+              </Aviso>
+            )}
             <div className="metricas">
               <div><span>{sync.pendientes}</span>eventos pendientes</div>
               <div><span>{sync.pendientes_con_error}</span>con reintentos</div>

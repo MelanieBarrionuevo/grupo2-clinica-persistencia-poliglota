@@ -254,6 +254,8 @@ La asignación A/B es ilustrativa: cualquiera puede ganar, pero nunca ambas. No 
 
 ## 12. Pendientes de diseño antes de fase 4
 
+> **Actualización (Fase 4):** estas decisiones ya se cerraron y se implementaron. Ver [fase4-implementacion.md](fase4-implementacion.md) §2 y la especificación OpenAPI. Se conserva el texto original como registro del diseño.
+
 - Definir autenticación/roles ficticios y fuente de identidad; proteger acceso a `mis citas`.
 - Cerrar política de holds, limpieza por vencimiento y transiciones exactas de estado.
 - Precisar contrato de reprogramación y formato de historial de cambio de cupo (anterior/nuevo).

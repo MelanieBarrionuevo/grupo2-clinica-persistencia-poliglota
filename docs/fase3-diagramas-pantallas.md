@@ -121,6 +121,8 @@ Cita | Paciente ficticio | Estado | [Confirmar] [Reprogramar]
 
 ## 4. Decisiones pendientes que deben aprobarse antes de implementar
 
+> **Actualización (Fase 4):** estas decisiones ya se cerraron y se implementaron. Ver [fase4-implementacion.md](fase4-implementacion.md) §2 y la especificación OpenAPI. Se conserva el texto original como registro del diseño.
+
 1. **Autenticación:** se plantea JWT con usuarios ficticios y roles; definir cómo se crean identidades y dónde se almacenan antes de afirmar que el control de acceso está diseñado por completo.
 2. **Reprogramación:** el contrato REST deja provisional el estado posterior. Propuesta: conservar `PENDIENTE` o `CONFIRMADA`, registrar evento `REPROGRAMADA` sin convertirlo en estado permanente. Ajustar el contrato tras aprobación del equipo.
 3. **Bloqueo temporal (hold):** la fase 2 exige guardarlo en PostgreSQL y liberarlo de manera consistente al vencer; decidir endpoints, job o recuperación transaccional.

@@ -904,6 +904,25 @@
                         }
                     },
                     {
+                        "name": "cerca",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "pattern": "^-?\\d{1,2}(\\.\\d+)?,-?\\d{1,3}(\\.\\d+)?$"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Ordena por cercan\u00eda a este punto: 'latitud,longitud' (coordenadas ficticias)",
+                            "title": "Cerca"
+                        },
+                        "description": "Ordena por cercan\u00eda a este punto: 'latitud,longitud' (coordenadas ficticias)"
+                    },
+                    {
                         "name": "pagina",
                         "in": "query",
                         "required": false,

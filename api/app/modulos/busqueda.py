@@ -29,6 +29,10 @@ def buscar(
     modalidad: Literal["PRESENCIAL", "TELECONSULTA"] | None = None,
     idioma: str | None = Query(default=None, max_length=10),
     ordenar: Literal["relevancia", "nombre"] = "relevancia",
+    cerca: str | None = Query(
+        default=None, pattern=r"^-?\d{1,2}(\.\d+)?,-?\d{1,3}(\.\d+)?$",
+        description="Ordena por cercanía a este punto: 'latitud,longitud' (coordenadas ficticias)",
+    ),
     pagina: int = Query(default=1, ge=1, le=100),
     por_pagina: int = Query(default=12, ge=1, le=50),
 ):
@@ -51,6 +55,12 @@ def buscar(
         "per_page": por_pagina,
         "sort_by": "nombre_orden:asc" if ordenar == "nombre" or not q.strip() else "_text_match:desc,nombre_orden:asc",
     }
+    if cerca:
+        lat, lon = (float(x) for x in cerca.split(","))
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            raise ApiError(422, "FILTRO_INVALIDO", "Coordenadas fuera de rango")
+        # La sede más cercana del profesional decide su posición; luego relevancia y nombre.
+        params["sort_by"] = f"ubicaciones({lat}, {lon}):asc,_text_match:desc,nombre_orden:asc"
     if filtros:
         params["filter_by"] = " && ".join(filtros)
 
@@ -73,6 +83,8 @@ def buscar(
             "idiomas": d.get("idiomas", []),
             "servicios": d.get("servicios", []),
             "version": d.get("version"),
+            "distancia_km": (round(hit["geo_distance_meters"]["ubicaciones"] / 1000, 1)
+                             if cerca and "ubicaciones" in hit.get("geo_distance_meters", {}) else None),
             "sincronizado_en": d.get("sincronizado_en"),
         })
     facetas = {
@@ -85,5 +97,6 @@ def buscar(
         "resultados": resultados,
         "facetas": facetas,
         "origen": "typesense",
+        "ordenado_por": "cercania" if cerca else ordenar,
         "tiempo_ms": r.get("search_time_ms"),
     }

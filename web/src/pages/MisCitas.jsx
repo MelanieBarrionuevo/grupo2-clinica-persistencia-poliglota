@@ -35,7 +35,11 @@ export default function MisCitas() {
       <Aviso tipo="exito" onCerrar={() => setMensaje(null)}>{mensaje}</Aviso>
       <ErrorApi error={error} onCerrar={() => setError(null)} />
       {citas === null ? <Cargando /> : citas.length === 0 ? (
-        <p className="tenue">Aún no tiene citas. <Link to="/">Buscar profesional</Link></p>
+        <div className="vacio">
+          <strong>Aún no tiene citas</strong>
+          Busque un profesional, elija una franja libre y su cita aparecerá aquí.
+          <div><Link className="btn" to="/">Buscar profesional</Link></div>
+        </div>
       ) : (
         <div className="lista-citas">
           {citas.map(c => {

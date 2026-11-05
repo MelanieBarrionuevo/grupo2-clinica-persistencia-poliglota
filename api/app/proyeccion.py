@@ -27,6 +27,8 @@ ESQUEMA = {
         {"name": "idiomas", "type": "string[]", "facet": True, "optional": True},
         {"name": "modalidades", "type": "string[]", "facet": True},
         {"name": "servicios", "type": "string[]", "optional": True},
+        # Coordenadas ficticias de las sedes activas del profesional: [[lat, lon], ...] (orden por cercanía).
+        {"name": "ubicaciones", "type": "geopoint[]", "optional": True},
         {"name": "version", "type": "int32"},
         {"name": "sincronizado_en", "type": "int64"},
     ],
@@ -34,15 +36,24 @@ ESQUEMA = {
 
 
 def asegurar_coleccion() -> bool:
-    """Crea la colección si no existe. Devuelve True si la tuvo que crear (índice vacío)."""
+    """Crea la colección si no existe o si su esquema quedó viejo (le falta algún campo).
+
+    Devuelve True si la tuvo que (re)crear: el índice queda vacío y hay que reindexar desde MongoDB.
+    """
     cliente = busqueda()
     try:
-        cliente.collections[COLECCION].retrieve()
-        return False
+        actual = cliente.collections[COLECCION].retrieve()
+        campos = {c["name"] for c in actual.get("fields", [])}
+        faltan = {c["name"] for c in ESQUEMA["fields"]} - campos
+        if not faltan:
+            return False
+        log.info("Esquema de búsqueda desactualizado (faltan %s): se recrea la colección", sorted(faltan))
+        cliente.collections[COLECCION].delete()
     except tse.ObjectNotFound:
-        cliente.collections.create(ESQUEMA)
-        log.info("Colección Typesense '%s' creada", COLECCION)
-        return True
+        pass
+    cliente.collections.create(ESQUEMA)
+    log.info("Colección Typesense '%s' creada", COLECCION)
+    return True
 
 
 def construir_documento(prof: dict) -> dict:
@@ -51,9 +62,15 @@ def construir_documento(prof: dict) -> dict:
     esp_ids = prof.get("especialidad_ids", [])
     sede_ids = [s["sede_id"] for s in prof.get("sedes", [])]
     especialidades = {d["_id"]: d["nombre"] for d in db.especialidades.find({"_id": {"$in": esp_ids}, "activo": True})}
-    sedes = {d["_id"]: d["nombre"] for d in db.sedes.find({"_id": {"$in": sede_ids}, "activo": True})}
+    sedes_docs = {d["_id"]: d for d in db.sedes.find({"_id": {"$in": sede_ids}, "activo": True})}
+    sedes = {i: d["nombre"] for i, d in sedes_docs.items()}
+    # GeoJSON guarda [longitud, latitud]; Typesense espera [latitud, longitud].
+    ubicaciones = [
+        [float(d["ubicacion"]["coordinates"][1]), float(d["ubicacion"]["coordinates"][0])]
+        for i, d in sedes_docs.items() if i in sede_ids and d.get("ubicacion")
+    ]
     servicios = [d["nombre"] for d in db.servicios.find({"especialidad_id": {"$in": esp_ids}, "activo": True})]
-    return {
+    documento = {
         "id": prof["_id"],
         "nombre": prof["nombre"],
         "nombre_orden": prof["nombre"].lower(),
@@ -67,6 +84,9 @@ def construir_documento(prof: dict) -> dict:
         "version": int(prof.get("version", 1)),
         "sincronizado_en": int(time.time() * 1000),
     }
+    if ubicaciones:
+        documento["ubicaciones"] = ubicaciones
+    return documento
 
 
 def sincronizar_profesional(profesional_id: str) -> str:

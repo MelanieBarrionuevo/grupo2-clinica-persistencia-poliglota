@@ -36,6 +36,7 @@ export default function App() {
   return (
     <SesionCtx.Provider value={{ usuario, entrar, salir }}>
       <header className="barra">
+        <div className="barra-interior">
         <Link to="/" className="marca">
           <span className="logo">+</span> Clínica ambulatoria
         </Link>
@@ -55,6 +56,7 @@ export default function App() {
           ) : (
             <Link className="btn btn-peq" to="/login">Iniciar sesión</Link>
           )}
+        </div>
         </div>
       </header>
       <main className="contenido">

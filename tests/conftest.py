@@ -78,6 +78,12 @@ def esperar_salud(estado: str = "ok", timeout: float = 120.0) -> float:
     return segundos
 
 
+# Lo que las pruebas crean se registra aquí y se limpia al terminar la sesión (fixture `limpieza_final`).
+CREADOS: list[tuple[str, str]] = []
+CITAS: list[str] = []
+RUTAS_CATALOGO = ("/especialidades", "/sedes", "/servicios", "/profesionales")
+
+
 class Cliente:
     def __init__(self, usuario: str | None = None):
         self.s = requests.Session()
@@ -91,7 +97,12 @@ class Cliente:
         return self.s.get(f"{API}{ruta}", timeout=15, **kw)
 
     def post(self, ruta, **kw):
-        return self.s.post(f"{API}{ruta}", timeout=15, **kw)
+        r = self.s.post(f"{API}{ruta}", timeout=15, **kw)
+        if ruta in RUTAS_CATALOGO and r.status_code == 201:
+            CREADOS.append((ruta, r.json()["id"]))
+        elif ruta == "/citas" and r.status_code in (200, 201):
+            CITAS.append(r.json()["cita_id"])
+        return r
 
     def patch(self, ruta, **kw):
         return self.s.patch(f"{API}{ruta}", timeout=15, **kw)
@@ -112,24 +123,57 @@ def admin():
     return Cliente("admin")
 
 
+@pytest.fixture(scope="session", autouse=True)
+def limpieza_final():
+    """Al terminar, deja la demo como estaba: nada de lo creado por las pruebas queda visible.
+
+    - Las citas de prueba que sigan activas se cancelan (no aparecen en «Citas pendientes» de Recepción).
+    - Lo creado en el catálogo se desactiva (borrado lógico): sale de la búsqueda y de Administración.
+    No se borra nada: el historial se conserva, como exige el diseño (RN-04, RN-11).
+    """
+    yield
+    if not CITAS and not CREADOS:
+        return
+    try:
+        recepcion, admin = Cliente("recepcion"), Cliente("admin")
+    except (AssertionError, requests.RequestException):
+        return  # API caída al final: no se puede limpiar, pero tampoco se rompe la sesión
+    for cita in set(CITAS):
+        try:
+            recepcion.patch(f"/citas/{cita}/cancelar")
+        except requests.RequestException:
+            pass
+    orden = {"/profesionales": 0, "/servicios": 1, "/especialidades": 2, "/sedes": 3}
+    for ruta, ident in sorted(set(CREADOS), key=lambda x: orden[x[0]]):
+        try:
+            admin.patch(f"{ruta}/{ident}", json={"activo": False})
+        except requests.RequestException:
+            pass
+
+
 @pytest.fixture(scope="session")
 def recepcion():
     return Cliente("recepcion")
 
 
+# Las pruebas usan pacientes propios (prueba1..3, creados por la semilla) para no llenar de citas de prueba
+# las cuentas paciente1..3 que se muestran en la defensa. PACIENTES_PRUEBA permite cambiarlos.
+PACIENTES = os.getenv("PACIENTES_PRUEBA", "prueba1,prueba2,prueba3").split(",")
+
+
 @pytest.fixture(scope="session")
 def paciente1():
-    return Cliente("paciente1")
+    return Cliente(PACIENTES[0])
 
 
 @pytest.fixture(scope="session")
 def paciente2():
-    return Cliente("paciente2")
+    return Cliente(PACIENTES[1])
 
 
 @pytest.fixture(scope="session")
 def paciente3():
-    return Cliente("paciente3")
+    return Cliente(PACIENTES[2])
 
 
 @pytest.fixture(scope="session")

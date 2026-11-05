@@ -3,7 +3,7 @@
 **Grupo 2 · Proyecto A · Persistencia políglota**
 **Producto de control:** resultados y evidencias de pruebas funcionales, integrales, de fallos y de consistencia.
 
-La validación se automatizó en 44 pruebas (`tests/`) que se ejecutan contra el sistema levantado con Docker Compose y dejan un informe con fecha en [`docs/evidencias/fase5/`](evidencias/fase5/). Cubren las 5 pruebas de la defensa (§7 del enunciado), los 5 flujos integrales, las reglas RN-01 a RN-15 y las restricciones RS-01 a RS-06.
+La validación se automatizó en 45 pruebas (`tests/`) que se ejecutan contra el sistema levantado con Docker Compose y dejan un informe con fecha en [`docs/evidencias/fase5/`](evidencias/fase5/). Cubren las 5 pruebas de la defensa (§7 del enunciado), los 5 flujos integrales, las reglas RN-01 a RN-15 y las restricciones RS-01 a RS-06.
 
 ## 1. Estrategia
 
@@ -15,6 +15,8 @@ La validación se automatizó en 44 pruebas (`tests/`) que se ejecutan contra el
 | Fallos (P5) | Caída y recuperación de cada gestor y del sincronizador; persistencia tras reiniciar | `test_fallos.py` | **Sí** (`--fallos`) |
 
 Las pruebas usan HTTP contra la API, igual que la web; ninguna escribe directamente en una base de datos. Cada prueba crea su propio catálogo y sus franjas con nombres únicos, así que se pueden repetir sin limpiar datos.
+
+**Las pruebas no ensucian la demostración:** reservan con pacientes exclusivos (`prueba1` a `prueba3`, creados por la semilla), y al terminar la sesión cancelan sus citas y desactivan todo lo que crearon en el catálogo (borrado lógico, sin perder historial). Así la búsqueda, Administración, «Citas pendientes» y las cuentas `paciente1` a `paciente3` quedan como las dejó la semilla.
 
 **Invariante de la agenda** (verificado después de cada prueba de concurrencia): un cupo está `RESERVADO` si y solo si tiene exactamente una cita activa (`PENDIENTE` o `CONFIRMADA`), y nunca más de una.
 
@@ -68,6 +70,7 @@ Cada ejecución genera `docs/evidencias/fase5/resultados-AAAAMMDD-HHMM.md` (más
 | V-16 | Seguridad | Errores uniformes; ninguna respuesta contiene contraseñas, claves ni cadenas de conexión | RS-03, RS-06 | — |
 | V-17 | Funcional | Lecturas públicas del catálogo, la búsqueda y las franjas responden | Pantallas §5 | Todos |
 | V-18 | Funcional | `cardiolgia` encuentra Cardiología; filtros y facetas por especialidad y sede | Fase 2 (elección de Typesense) | Typesense |
+| V-19 | Funcional | Orden por cercanía: distancias crecientes, la sede más cercana primero; coordenadas inválidas → 422 | H-01, búsqueda por ubicación (§1) | Typesense, MongoDB |
 | F-01 | Fallo | `docker compose restart`: citas, historial, catálogo e índice persisten; filtros de Redis se pierden | P5, RN-13 | Todos |
 | F-02 | Fallo | Typesense detenido: `/health` degradado, búsqueda `503`, listado desde MongoDB, reserva `201`; el cambio pendiente llega al volver | P5, RN-13 | Typesense, MongoDB |
 | F-03 | Fallo | Redis detenido: solo `/sesiones` falla (`503`); reservar y buscar siguen | RN-13 | Redis |
@@ -95,40 +98,55 @@ Esto confirma que las pruebas son correctas y que la lógica de agenda, citas e 
 
 ### 4.2 Corrida oficial con Docker Compose
 
-> Completar después de ejecutar `python tests/reporte.py --fallos` en el equipo del grupo.
+Ejecutada con los cuatro gestores reales, incluidas las pruebas de fallos (`python tests/reporte.py --fallos`).
 
-| Fecha | Commit | Quién ejecutó | Resultado | Informe |
-| --- | --- | --- | --- | --- |
-| _pendiente_ | | | | `docs/evidencias/fase5/resultados-….md` |
+| Fecha | Commit | Quién ejecutó | Equipo | Resultado | Informe |
+| --- | --- | --- | --- | --- | --- |
+| 05/11/2026 10:55 | `8052758` | Nicolás García | Windows 11 · Docker 29.8.0 | **44 pasaron · 0 fallaron · 0 omitidas** (247 s) | [resultados-20261105-1055.md](evidencias/fase5/resultados-20261105-1055.md) |
+| 05/11/2026 10:54 | `8052758` | Nicolás García | Windows 11 · Docker 29.8.0 | 37 pasaron · 7 omitidas (sin `--fallos`) | [resultados-20261105-1054.md](evidencias/fase5/resultados-20261105-1054.md) |
+
+| Métrica | Valor medido |
+| --- | --- |
+| Retraso alta → búsqueda (V-01, 5 repeticiones) | 0,98 s promedio · 1,09 s máximo |
+| Retraso cambio de sede → búsqueda (P2) | 0,93 s |
+| Recuperación tras `docker compose restart` (F-01) | 10,0 s |
+| Recuperación de la búsqueda tras levantar Typesense (F-02) | 3,3 s |
+| Recuperación de la agenda tras levantar PostgreSQL (F-04) | 5,7 s |
+
+La corrida oficial confirmó la verificación previa y completó la única prueba que faltaba (F-05, caída de MongoDB).
 
 ## 5. Evidencias para la defensa (capturas)
 
 El informe automático demuestra el comportamiento de la API. Para la web, el entregable 8 pide capturas o video. Guardarlas en `docs/evidencias/fase5/capturas/` con estos nombres:
 
-| Archivo | Pantalla | Qué debe verse |
-| --- | --- | --- |
-| `01-busqueda.png` | Inicio | Búsqueda `cardiolgia` con resultados y la etiqueta de origen Typesense |
-| `02-alta-profesional.png` | Administración → Técnico | Profesional creado y su evento procesado con `retraso_ms` |
-| `03-reserva-ok.png` | Detalle del profesional | Confirmación con el ID de la cita |
-| `04-reserva-409.png` | Detalle (segunda ventana) | Mensaje "La franja ya no está disponible" |
-| `05-mis-citas-historial.png` | Mis citas | Cita cancelada con su historial CREADA → CANCELADA |
-| `06-recepcion-reprogramar.png` | Recepción | Agenda del día tras reprogramar |
-| `07-busqueda-degradada.png` | Inicio con Typesense detenido | Aviso de buscador no disponible y listado desde MongoDB |
-| `08-tecnico-pendientes.png` | Técnico con Typesense detenido | Eventos pendientes en el outbox y `/health` degradado |
-| `09-compose-ps.png` | Terminal | `docker compose ps`: gestores sin puertos publicados (RS-02) |
-| `10-reinicio.png` | Terminal + Mis citas | `docker compose restart` y la misma cita después |
+| Archivo | Pantalla | Qué debe verse | Estado |
+| --- | --- | --- | --- |
+| `01-busqueda.png` | Inicio | Resultados con la etiqueta de origen Typesense y el tiempo | ✅ |
+| `01b-busqueda-cercania.png` | Inicio con «Más cercanas» | Tarjetas con «a X km», ordenadas por cercanía | Pendiente |
+| `02-alta-profesional.png` | Administración → Técnico | Profesional creado y su evento procesado con `retraso_ms` | Pendiente |
+| `03a-detalle-franjas.png` | Detalle del profesional | Ficha leída de MongoDB y franjas leídas de PostgreSQL | ✅ |
+| `03-reserva-ok.png` | Detalle del profesional | Confirmación con el ID de la cita y la franja tachada | ✅ |
+| `04-reserva-409.png` | Detalle (segunda ventana) | Mensaje "La franja ya no está disponible" | Pendiente |
+| `05-mis-citas-historial.png` | Mis citas | Cita cancelada con su historial CREADA → CANCELADA | Pendiente |
+| `06-recepcion-reprogramar.png` | Recepción | Agenda del día tras reprogramar | Pendiente |
+| `07-busqueda-degradada.png` | Inicio con Typesense detenido | Aviso de buscador no disponible y listado desde MongoDB | Pendiente |
+| `08-tecnico-pendientes.png` | Técnico con Typesense detenido | Aviso con la causa del error, eventos pendientes y `/health` degradado | Pendiente |
+| `09-compose-ps.png` | Terminal | `docker compose ps`: gestores sin puertos publicados (RS-02) | Pendiente |
+| `10-reinicio.png` | Terminal + Mis citas | `docker compose restart` y la misma cita después | Pendiente |
 
 ## 6. Hallazgos de la validación
 
-Las pruebas no encontraron errores de lógica en la API: concurrencia, idempotencia, permisos y recuperación se comportaron según el diseño. Sí aparecieron diferencias entre lo documentado y lo implementado.
+Las pruebas no encontraron errores de lógica en la API: concurrencia, idempotencia, permisos y recuperación se comportaron según el diseño. Sí aparecieron diferencias entre lo documentado y lo implementado, y un error de configuración. Todos quedaron corregidos salvo H-05, que es una decisión de diseño.
 
 | ID | Hallazgo | Impacto | Acción propuesta |
 | --- | --- | --- | --- |
-| H-01 | La Fase 2 eligió Typesense, entre otras razones, por el **orden por cercanía** (`geopoint`), y el enunciado pide buscar por **ubicación**. `/buscar` no tiene campo geográfico ni parámetro de cercanía, aunque las sedes ya guardan coordenadas en MongoDB | Medio: la defensa puede preguntar por una ventaja que se usó para justificar el gestor pero no se implementó | Agregar `ubicaciones: geopoint[]` a la proyección y `cerca=lat,lon` a `/buscar`; o retirar la cercanía de la justificación de la Fase 2 |
-| H-02 | Con Typesense caído, el sincronizador falla en `asegurar_coleccion()` antes de procesar el lote: los eventos quedan pendientes, pero `intentos` y `ultimo_error` no se actualizan y no hay backoff. La Fase 4 y `tests/README.md` describen backoff de hasta 60 s | Bajo: el comportamiento real es mejor (reintenta cada ~5 s), pero la pantalla técnica muestra "0 con error" durante la caída | Ajustar la documentación, o registrar el error en el latido del worker para mostrarlo en Técnico |
-| H-03 | Permisos: la Fase 1 dice que solo recepción confirma citas y solo el administrador ve el sincronizador; la implementación permite ambos a recepción y administración. `api-contratos.md` dice "Recepción" para confirmar y la Fase 4 dice "Recepción, Admin" | Bajo | Unificar: actualizar la matriz de la Fase 1, o restringir en la API |
-| H-04 | `api-contratos.md` y `fase3-diagramas-pantallas.md` aún dicen "decisión pendiente" o "provisional" (identidad, reprogramación, holds, `/health`), aunque la Fase 4 ya las cerró. La Fase 3 propone `/sesiones/{id}/filtros` y claves `filtros:{sesion_id}`; lo implementado es `/sesiones/filtros` y `sesion:{usuario}:filtros` | Bajo: confunde a quien lea el informe | Añadir una nota "superado por Fase 4 §2" en esas secciones |
-| H-05 | El enunciado menciona búsqueda por **horario**. La búsqueda no filtra por horario; las franjas se ven en la ficha del profesional (desde PostgreSQL) | Bajo: es coherente con no poner disponibilidad en el índice (RN-02) | Explicarlo en la defensa, o agregar filtro de fecha en la ficha |
+| H-01 | La Fase 2 eligió Typesense, entre otras razones, por el **orden por cercanía** (`geopoint`), y el enunciado pide buscar por **ubicación**. `/buscar` no tiene campo geográfico ni parámetro de cercanía, aunque las sedes ya guardan coordenadas en MongoDB | Medio: la defensa puede preguntar por una ventaja que se usó para justificar el gestor pero no se implementó | **Corregido**: `ubicaciones: geopoint[]` en la proyección, `cerca=lat,lon` en `/buscar`, opción «Más cercanas» en la web y prueba V-19 |
+| H-02 | Con Typesense caído, el sincronizador falla en `asegurar_coleccion()` antes de procesar el lote: los eventos quedan pendientes, pero `intentos` y `ultimo_error` no se actualizan y no hay backoff. La Fase 4 y `tests/README.md` describen backoff de hasta 60 s | Bajo: el comportamiento real es mejor (reintenta cada ~5 s), pero la pantalla técnica muestra "0 con error" durante la caída | **Corregido**: el worker guarda `ultimo_error` en su latido y la pantalla Técnico lo muestra mientras dure la caída |
+| H-03 | Permisos: la Fase 1 dice que solo recepción confirma citas y solo el administrador ve el sincronizador; la implementación permite ambos a recepción y administración. `api-contratos.md` dice "Recepción" para confirmar y la Fase 4 dice "Recepción, Admin" | Bajo | **Corregido**: la matriz de la Fase 1 y `api-contratos.md` quedaron iguales a la API |
+| H-04 | `api-contratos.md` y `fase3-diagramas-pantallas.md` aún dicen "decisión pendiente" o "provisional" (identidad, reprogramación, holds, `/health`), aunque la Fase 4 ya las cerró. La Fase 3 propone `/sesiones/{id}/filtros` y claves `filtros:{sesion_id}`; lo implementado es `/sesiones/filtros` y `sesion:{usuario}:filtros` | Bajo: confunde a quien lea el informe | **Corregido**: nota de actualización en esas secciones y textos provisionales reemplazados por la decisión implementada |
+| H-06 | `db/mongo/01_init.js` tenía etiquetas `<escape>` sobrantes al inicio y al final: `mongo-init` terminaba con error y la API no arrancaba con Docker | **Alto** (bloqueaba el despliegue) | **Corregido** en esta fase (commit `9c9afd4`) |
+| H-07 | La Fase 2 (decisión D-08) dice que Redis usa persistencia RDB, pero `docker-compose.yml` la desactiva (`--save ""`) | Bajo: lo implementado es lo correcto, Redis es efímero por diseño | **Corregido** en la Fase 2 (D-08) |
+| H-05 | El enunciado menciona búsqueda por **horario**. La búsqueda no filtra por horario; las franjas se ven en la ficha del profesional (desde PostgreSQL) | Bajo: es coherente con no poner disponibilidad en el índice (RN-02) | Decisión de diseño: se mantiene y se explica en la defensa (la ficha ya muestra las franjas de 14 días por fecha) |
 
 ## 7. Límites de la validación
 
@@ -136,3 +154,4 @@ Las pruebas no encontraron errores de lógica en la API: concurrencia, idempoten
 - El vencimiento del hold se verifica por su hora de vencimiento y por código (estado efectivo `BLOQUEADO` → `DISPONIBLE`), sin esperar los 300 s. Para verlo en vivo, usar el TTL corto de la sección 2.
 - La ventana entre validar el catálogo (MongoDB) y reservar (PostgreSQL) está documentada en la Fase 4 y no se prueba: requiere desactivar un profesional en el mismo milisegundo.
 - No se prueba la web con un navegador automatizado; su comportamiento se respalda con las capturas de la sección 5.
+- Typesense (versiones 0.24 a 30.0) se cierra con SIGSEGV al iniciar en un equipo con Intel Core Ultra 7 258V y WSL2 6.18, incluso con `vsyscall=emulate`. El resto de gestores funciona en ese equipo; la corrida oficial se ejecutó en otro.

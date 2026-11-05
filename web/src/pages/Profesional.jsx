@@ -151,7 +151,7 @@ export default function Profesional() {
         </div>
         <p className="tenue pequeno">La disponibilidad se lee siempre de <Origen valor="postgresql" />; la reserva se decide ahí.</p>
         {!usuario && <Aviso tipo="info"><Link to="/login">Inicie sesión</Link> como paciente para reservar.</Aviso>}
-        {cupos === null ? <Cargando /> : porDia.length === 0 ? <p className="tenue">No hay franjas publicadas.</p> : (
+        {cupos === null ? <Cargando /> : porDia.length === 0 ? <div className="vacio"><strong>No hay franjas disponibles</strong>Este profesional no tiene horarios publicados en los próximos 14 días.</div> : (
           <div className="dias">
             {porDia.map(([dia, lista]) => (
               <div key={dia} className="dia">
