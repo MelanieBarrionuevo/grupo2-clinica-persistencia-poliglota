@@ -98,6 +98,8 @@ def estado_sincronizador(_: Usuario = Depends(requiere_rol("ADMINISTRADOR", "REC
             "ultimo_latido": latido,
             "eventos_procesados": worker.get("eventos_procesados", 0),
             "ultima_reindexacion": worker.get("ultima_reindexacion"),
+            "ultimo_error": worker.get("ultimo_error"),
+            "ultimo_error_en": worker.get("ultimo_error_en"),
         },
         "ultimos_eventos": ultimos,
     }

@@ -188,7 +188,7 @@ El enunciado pide **al menos tres** y advierte que no se premia usar más sin ne
 | D-05 | `EXCLUDE USING gist` con `btree_gist` para impedir cupos solapados del mismo profesional. | RN-09 |
 | D-06 | Hold de cupo como `cupo.bloqueado_hasta` en PostgreSQL, **no** en Redis. | RN-02, RN-07 |
 | D-07 | Typesense se puede **reindexar completo** desde MongoDB con un comando del sincronizador. | RN-12, prueba P5 |
-| D-08 | Redis con persistencia RDB por defecto; perder datos de Redis es aceptable. Todas las claves llevan TTL. | RN-13 |
+| D-08 | Redis **sin persistencia** (`--save ""`, sin AOF): perder sus datos es aceptable y un reinicio lo vacía a propósito. Todas las claves llevan TTL. *(Corregido en la Fase 5: la versión inicial decía RDB por defecto.)* | RN-13 |
 | D-09 | Imágenes previstas: `postgres:16-alpine`, `mongo:7.0`, `typesense/typesense:28.0`, `redis:7.4-alpine`. | Despliegue |
 | D-10 | Solo la API y la web publican puertos; los gestores quedan en la red interna (en las pruebas pequeñas se publican solo en `127.0.0.1`). | RS-02 |
 

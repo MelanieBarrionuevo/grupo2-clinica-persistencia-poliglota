@@ -1,0 +1,32 @@
+digraph G {
+  rankdir=TB; nodesep=0.3; ranksep=0.45; fontname="Helvetica"; fontsize=12;
+  node [shape=plain, fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="Modelo de datos por gestor · IDs compartidos sin claves foráneas entre bases"; labelloc=t; fontsize=14;
+
+  subgraph cluster_mongo { label="MongoDB 7 · catálogo oficial"; style="rounded,filled"; fillcolor="#EAF4EA"; color="#5B8C5A";
+    esp [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#CFE6CF"><b>especialidades</b></td></tr><tr><td align="left">_id · nombre · nombre_normalizado (único)<br align="left"/>descripcion · activo · version</td></tr></table>>];
+    sede [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#CFE6CF"><b>sedes</b></td></tr><tr><td align="left">_id · nombre (único) · direccion_ficticia<br align="left"/>ubicacion (GeoJSON, 2dsphere) · activo</td></tr></table>>];
+    serv [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#CFE6CF"><b>servicios</b></td></tr><tr><td align="left">_id · nombre · especialidad_id<br align="left"/>duracion_minutos · modalidades[] · activo</td></tr></table>>];
+    prof [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#CFE6CF"><b>profesionales</b></td></tr><tr><td align="left">_id · nombre · especialidad_ids[]<br align="left"/>sedes[{sede_id, horario_ref}] · idiomas[]<br align="left"/>modalidades[] · atributos{} · activo · version</td></tr></table>>];
+    outbox [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#CFE6CF"><b>outbox</b></td></tr><tr><td align="left">entidad_tipo · entidad_id · version (único)<br align="left"/>creado_en · procesado_en · intentos · retraso_ms</td></tr></table>>];
+  }
+  subgraph cluster_pg { label="PostgreSQL 16 · agenda y citas (consistencia fuerte)"; style="rounded,filled"; fillcolor="#E8F0FA"; color="#4A72A8";
+    cupo [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#C9DAF0"><b>cupo</b></td></tr><tr><td align="left">id PK · profesional_id · sede_id · servicio_id<br align="left"/>inicio · fin · estado · bloqueado_hasta · bloqueado_por<br align="left"/>EXCLUDE gist (profesional, rango) sin solapes</td></tr></table>>];
+    cita [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#C9DAF0"><b>cita</b></td></tr><tr><td align="left">id UUID PK · cupo_id FK · paciente_id · servicio_id<br align="left"/>estado · clave_idempotencia UNIQUE<br align="left"/>índice único parcial: 1 cita activa por cupo</td></tr></table>>];
+    evento [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#C9DAF0"><b>evento_cita</b></td></tr><tr><td align="left">id PK · cita_id FK · tipo<br align="left"/>estado_anterior · estado_nuevo<br align="left"/>cupo_anterior_id · cupo_nuevo_id · actor · ocurrido_en</td></tr></table>>];
+    usuario [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#C9DAF0"><b>usuario</b></td></tr><tr><td align="left">id PK · usuario UNIQUE · rol · password_hash (PBKDF2)</td></tr></table>>];
+  }
+  subgraph cluster_ts { label="Typesense · proyección"; style="rounded,filled"; fillcolor="#FBF1E3"; color="#B07A2A";
+    tsdoc [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#F2DDBB"><b>profesionales (documento plano)</b></td></tr><tr><td align="left">id · nombre · especialidades[] · sedes[]<br align="left"/>modalidades[] · idiomas[] · servicios[] · version</td></tr></table>>];
+  }
+  subgraph cluster_redis { label="Redis 7 · temporal (TTL)"; style="rounded,filled"; fillcolor="#F7E6E6"; color="#A85454";
+    rkeys [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="3" bgcolor="white"><tr><td bgcolor="#EBC6C6"><b>claves con TTL 1800 s</b></td></tr><tr><td align="left">sesion:{usuario}:filtros<br align="left"/>sesion:{usuario}:borrador</td></tr></table>>];
+  }
+  esp -> serv [label="especialidad_id"]; esp -> prof; sede -> prof;
+  cupo -> cita [label="FK", color="#4A72A8", penwidth=1.4]; cita -> evento [label="FK", color="#4A72A8", penwidth=1.4];
+  usuario -> cita [label="paciente_id", style=dashed];
+  prof -> cupo [label="profesional_id (lógico)", style=dashed]; sede -> cupo [style=dashed]; serv -> cupo [style=dashed];
+  prof -> outbox [label="misma transacción"]; outbox -> tsdoc [label="sincronizador (upsert)", style=dotted, penwidth=1.4];
+  usuario -> rkeys [label="clave derivada del token", style=dashed];
+}

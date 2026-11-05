@@ -31,8 +31,12 @@ code { background: #eef2f1; padding: 0 4px; border-radius: 4px; font-size: 0.85e
 
 /* ---------- barra superior ---------- */
 .barra {
-  display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 1.5rem;
   background: var(--superficie); border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 5;
+}
+/* Mismo ancho y relleno que .contenido: logo, menú y usuario quedan alineados con la página. */
+.barra-interior {
+  max-width: 1120px; margin: 0 auto; padding: 0.7rem 1.5rem;
+  display: flex; align-items: center; gap: 1.5rem;
 }
 .marca { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: var(--texto); text-decoration: none; }
 .logo { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--primario); color: #fff; font-weight: 800; }
@@ -76,6 +80,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--primario-cl
 /* ---------- tarjetas y avisos ---------- */
 .tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .angosta { max-width: 440px; margin: 2rem auto; }
+/* Estados vacíos: centrados en un recuadro, no un texto suelto a la izquierda. */
+.vacio {
+  text-align: center; padding: 2.5rem 1.5rem; margin: 0.5rem 0 1rem; color: var(--tenue);
+  background: var(--superficie); border: 1px dashed #c6d1ce; border-radius: var(--radio);
+}
+.vacio strong { display: block; color: var(--texto); font-size: 1.05rem; margin-bottom: 0.3rem; }
+.vacio .btn, .vacio .btn-sec { margin-top: 0.9rem; }
 .tenue { color: var(--tenue); }
 .pequeno { font-size: 0.82rem; }
 .aviso { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border-radius: 8px; margin: 0.6rem 0 1rem; border: 1px solid; }
@@ -113,6 +124,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--primario-cl
 .avatar { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--primario-claro); color: var(--primario-osc); display: grid; place-items: center; font-weight: 700; font-size: 1.1rem; }
 .avatar.grande { width: 72px; height: 72px; font-size: 1.8rem; }
 .especialidades { color: var(--primario-osc); font-weight: 500; }
+.distancia { color: var(--primario-osc); font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.4rem; }
 .chip { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--primario-claro); color: var(--primario-osc); }
 .chip-tenue { background: #eef2f1; color: var(--tenue); }
@@ -170,7 +182,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--primario-cl
 .acceso-rapido { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.5rem; }
 
 @media (max-width: 720px) {
-  .barra { flex-wrap: wrap; gap: 0.6rem; padding: 0.6rem 1rem; }
+  .barra-interior { flex-wrap: wrap; gap: 0.5rem 0.8rem; padding: 0.6rem 1rem; }
+  .usuario { margin-left: auto; font-size: 0.82rem; }
+  .usuario span { display: none; }
+  .barra nav { order: 3; flex-basis: 100%; flex-wrap: nowrap; overflow-x: auto; }
+  .barra nav a { white-space: nowrap; }
+  .heroe { padding: 1.2rem 1rem 1rem; }
+  .heroe h1 { font-size: 1.3rem; }
+  .heroe .filtros > * { flex: 1 1 calc(50% - 0.5rem); }
   .contenido { padding: 1rem; }
   .ficha { flex-direction: column; }
   .datos { grid-template-columns: 1fr; }

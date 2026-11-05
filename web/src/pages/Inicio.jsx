@@ -4,6 +4,8 @@ import { api } from '../api'
 import { Aviso, Cargando, ErrorApi, Origen, useSesion } from '../ui'
 
 const VACIO = { texto: '', especialidad_id: '', sede_id: '', modalidad: '', ordenar: 'relevancia' }
+// Si el navegador no comparte la ubicación, se usa un punto de referencia ficticio en el centro de la ciudad.
+const REFERENCIA = { lat: -0.2, lon: -78.5, nombre: 'un punto de referencia en el centro de la ciudad' }
 
 export default function Inicio() {
   const { usuario } = useSesion()
@@ -15,6 +17,7 @@ export default function Inicio() {
   const [error, setError] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [restaurados, setRestaurados] = useState(false)
+  const [punto, setPunto] = useState(null) // { lat, lon, nombre } para ordenar por cercanía
   const listo = useRef(false)
 
   // Catálogo para los filtros (MongoDB) y filtros guardados de la sesión (Redis, si existe).
@@ -37,18 +40,34 @@ export default function Inicio() {
     iniciar()
   }, [usuario])
 
+  // Ordenar por cercanía: se pide la ubicación una sola vez; si se niega o tarda, se usa la referencia ficticia.
   useEffect(() => {
+    if (filtros.ordenar !== 'cercania' || punto) return
+    if (!navigator.geolocation) { setPunto(REFERENCIA); return }
+    navigator.geolocation.getCurrentPosition(
+      pos => setPunto({ lat: +pos.coords.latitude.toFixed(4), lon: +pos.coords.longitude.toFixed(4), nombre: 'su ubicación' }),
+      () => setPunto(REFERENCIA),
+      { timeout: 4000, maximumAge: 600000 },
+    )
+  }, [filtros.ordenar, punto])
+
+  useEffect(() => {
+    if (filtros.ordenar === 'cercania' && !punto) return // espera la ubicación
     const t = setTimeout(() => buscar(filtros), 300)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtros])
+  }, [filtros, punto])
 
   async function buscar(f) {
     setCargando(true); setError(null)
-    const params = { q: f.texto, especialidad_id: f.especialidad_id, sede_id: f.sede_id, modalidad: f.modalidad, ordenar: f.ordenar }
+    const cercania = f.ordenar === 'cercania' && punto
+    const params = {
+      q: f.texto, especialidad_id: f.especialidad_id, sede_id: f.sede_id, modalidad: f.modalidad,
+      ordenar: cercania ? 'relevancia' : f.ordenar, cerca: cercania ? `${punto.lat},${punto.lon}` : undefined,
+    }
     try {
       const r = await api('/buscar', { params })
-      setResultado({ origen: r.origen, total: r.total, tiempo: r.tiempo_ms, items: r.resultados })
+      setResultado({ origen: r.origen, total: r.total, tiempo: r.tiempo_ms, items: r.resultados, cercania: Boolean(cercania) })
       setDegradado(false)
     } catch (e) {
       if (e.codigo === 'BUSQUEDA_NO_DISPONIBLE') {
@@ -101,6 +120,7 @@ export default function Inicio() {
           <select value={filtros.ordenar} onChange={cambiar('ordenar')} aria-label="Ordenar">
             <option value="relevancia">Más relevantes</option>
             <option value="nombre">Nombre A–Z</option>
+            <option value="cercania">Más cercanas</option>
           </select>
           <button className="btn-sec" onClick={() => setFiltros(VACIO)}>Limpiar</button>
         </div>
@@ -120,6 +140,7 @@ export default function Inicio() {
           <span>{resultado.total} profesional(es)</span>
           <Origen valor={resultado.origen} />
           {resultado.tiempo != null && <span className="tenue pequeno">{resultado.tiempo} ms</span>}
+          {resultado.cercania && punto && <span className="tenue pequeno">· ordenado por cercanía a {punto.nombre}</span>}
         </div>
       )}
       {cargando && !resultado && <Cargando texto="Buscando…" />}
@@ -131,7 +152,7 @@ export default function Inicio() {
             <div>
               <h3>{p.nombre}</h3>
               <p className="especialidades">{p.especialidades.join(' · ')}</p>
-              <p className="tenue pequeno">📍 {p.sedes.join(', ')}</p>
+              <p className="tenue pequeno">📍 {p.sedes.join(', ')}{p.distancia_km != null && <strong className="distancia"> · a {p.distancia_km.toLocaleString('es-EC')} km</strong>}</p>
               <div className="chips">
                 {p.modalidades.map(m => <span key={m} className="chip">{m === 'TELECONSULTA' ? 'Teleconsulta' : 'Presencial'}</span>)}
                 {p.idiomas?.map(i => <span key={i} className="chip chip-tenue">{i}</span>)}
@@ -141,7 +162,7 @@ export default function Inicio() {
         ))}
       </div>
       {resultado && resultado.items.length === 0 && (
-        <p className="tenue">No hay resultados. Si el profesional se creó hace un instante, la búsqueda puede tardar unos segundos en actualizarse.</p>
+        <div className="vacio"><strong>No hay resultados</strong>Pruebe con otro texto o quite filtros. Si el profesional se creó hace un instante, la búsqueda puede tardar unos segundos en actualizarse.</div>
       )}
     </>
   )

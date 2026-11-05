@@ -18,11 +18,11 @@ pytest -v -s tests/                  # lo mismo sin informe
 | Archivo | Contenido |
 | --- | --- |
 | `test_flujos.py` | 14 pruebas de la Fase 4: P1–P4, idempotencia, reprogramación, roles, holds, desactivación, TTL |
-| `test_validacion.py` | Fase 5, V-01 a V-18: retraso medido, convergencia de la búsqueda, concurrencia e invariante de la agenda, la API no confía en el navegador, matriz de permisos, errores sin secretos |
+| `test_validacion.py` | Fase 5, V-01 a V-19 (V-19: orden por cercanía): retraso medido, convergencia de la búsqueda, concurrencia e invariante de la agenda, la API no confía en el navegador, matriz de permisos, errores sin secretos |
 | `test_fallos.py` | Fase 5, F-01 a F-07 (P5): reinicio completo y caída de cada gestor y del sincronizador. Solo con `--fallos` |
 | `reporte.py` | Ejecuta la suite y escribe `docs/evidencias/fase5/resultados-AAAAMMDD-HHMM.md` |
 
-`API_URL` permite apuntar a otra dirección (por defecto `http://localhost:8000/api/v1`). `CONTROL_CMD` cambia el comando con el que las pruebas de fallos detienen servicios (por defecto `docker compose {accion} {servicio}`). Las pruebas crean su propio catálogo con nombres únicos, así que se pueden repetir sin limpiar datos.
+`API_URL` permite apuntar a otra dirección (por defecto `http://localhost:8000/api/v1`). `CONTROL_CMD` cambia el comando con el que las pruebas de fallos detienen servicios (por defecto `docker compose {accion} {servicio}`). Las pruebas crean su propio catálogo con nombres únicos, así que se pueden repetir sin limpiar datos. Usan los pacientes `prueba1` a `prueba3` (no los de la demo) y al terminar cancelan sus citas y desactivan lo que crearon, así que no ensucian la demostración (`PACIENTES_PRUEBA` permite cambiar las cuentas).
 
 ### Pruebas de la Fase 4
 

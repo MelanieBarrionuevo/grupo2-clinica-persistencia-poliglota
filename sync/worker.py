@@ -81,22 +81,34 @@ def procesar_lote() -> int:
     return procesados
 
 
+def ciclo() -> bool:
+    """Un ciclo del sincronizador. Devuelve False si hubo un error (MongoDB o Typesense caídos)."""
+    try:
+        latido()
+        # Comprobación barata en cada ciclo: si Typesense perdió su índice (volumen borrado) o su esquema
+        # quedó viejo, se recrea y se reconstruye completo desde la fuente oficial.
+        if asegurar_coleccion():
+            n = reindexar_todo()
+            latido(ultima_reindexacion=ahora())
+            log.info("Índice reconstruido desde MongoDB: %s documentos", n)
+        procesar_lote()
+        latido(ultimo_error=None)
+        return True
+    except Exception as exc:
+        # Los eventos siguen pendientes y se reintenta en el próximo ciclo.
+        log.warning("Ciclo con error (%s); se reintentará", type(exc).__name__)
+        try:  # la causa queda visible en la pantalla técnica (si MongoDB responde)
+            latido(ultimo_error=f"{type(exc).__name__}: {str(exc)[:160]}", ultimo_error_en=ahora())
+        except Exception:
+            pass
+        return False
+
+
 def bucle() -> None:
     intervalo = config.sync_intervalo_ms / 1000
     log.info("Sincronizador iniciado (intervalo %.1fs)", intervalo)
     while True:
-        try:
-            latido()
-            # Comprobación barata en cada ciclo: si Typesense perdió su índice (volumen borrado),
-            # se recrea y se reconstruye completo desde la fuente oficial.
-            if asegurar_coleccion():
-                n = reindexar_todo()
-                latido(ultima_reindexacion=ahora())
-                log.info("Índice reconstruido desde MongoDB: %s documentos", n)
-            procesar_lote()
-        except Exception as exc:
-            # MongoDB o Typesense caídos: los eventos siguen pendientes y se reintenta en el próximo ciclo.
-            log.warning("Ciclo con error (%s); se reintentará", type(exc).__name__)
+        if not ciclo():
             time.sleep(min(5, intervalo * 5))
         time.sleep(intervalo)
 

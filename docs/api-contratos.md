@@ -9,11 +9,11 @@
 - Solicitudes y respuestas: `application/json`; fechas en ISO 8601 con zona horaria, por ejemplo `2026-11-03T14:00:00-05:00`.
 - Identificadores del catálogo: cadenas estables (`prof-001`, `sede-norte`, `esp-cardio`, `serv-consulta`); cupos: entero; citas: UUID.
 - El navegador nunca se conecta a los gestores ni envía claves de bases de datos.
-- Para operaciones autenticadas se utilizará `Authorization: Bearer <token>`; **la estrategia de identidad sigue siendo una decisión de diseño pendiente**. Los roles del enunciado son `PACIENTE`, `RECEPCIONISTA` y `ADMINISTRADOR`.
+- Para operaciones autenticadas se utilizará `Authorization: Bearer <token>`; la identidad se resolvió en la Fase 4 con usuarios semilla en PostgreSQL y JWT firmado por la API. Los roles del enunciado son `PACIENTE`, `RECEPCIONISTA` y `ADMINISTRADOR`.
 - No confiar en `paciente_id`, roles, precio, disponibilidad ni estados proporcionados por el navegador: derivar el actor de una identidad verificada y consultar la fuente oficial.
 - Errores uniformes propuestos: `{"error":{"codigo":"CUPO_OCUPADO","mensaje":"La franja ya no está disponible"}}`.
 - Códigos: `200` lectura/cambio; `201` creación; `400` regla o solicitud inválida; `401` sin autenticación; `403` sin permiso; `404` inexistente; `409` conflicto de negocio; `422` cuerpo o parámetros inválidos; `503` dependencia crítica indisponible. Con FastAPI, personalizar manejadores si se exige el formato uniforme para todos los errores.
-- Este documento es contrato de diseño: antes de comenzar la API deben cerrarse las decisiones marcadas **PENDIENTE**.
+- Este documento fue el contrato de diseño de la Fase 3. Las decisiones que marcaba como pendientes ya se cerraron (sección 9).
 
 ## 2. Mapa de endpoints
 
@@ -32,14 +32,14 @@
 | GET | `/servicios` | Público | MongoDB | 200 | 503 |
 | POST | `/servicios` | Administrador | MongoDB + outbox | 201 | 409, 422 |
 | PATCH | `/servicios/{id}` | Administrador | MongoDB + outbox | 200 | 404, 422 |
-| GET | `/buscar` | Público | Typesense | 200 | 503 |
+| GET | `/buscar` (`cerca=lat,lon` ordena por cercanía) | Público | Typesense | 200 | 422, 503 |
 | GET | `/cupos` | Público | PostgreSQL | 200 | 422, 503 |
 | POST | `/cupos` | Recepción, Administrador | MongoDB validación + PostgreSQL escritura | 201 | 409, 422, 503 |
 | POST | `/citas` | Paciente, Recepción | MongoDB validación + PostgreSQL transacción | 201; 200 reintento | 403, 409, 422, 503 |
 | GET | `/citas/mias` | Paciente | PostgreSQL, identidad verificada | 200 | 401, 503 |
 | GET | `/citas/{id}` | Propietario, Recepción, Administrador (lectura) | PostgreSQL | 200 | 403, 404 |
 | PATCH | `/citas/{id}/cancelar` | Propietario, Recepción | PostgreSQL transacción | 200 | 403, 404, 409 |
-| PATCH | `/citas/{id}/confirmar` | Recepción | PostgreSQL transacción | 200 | 403, 404, 409 |
+| PATCH | `/citas/{id}/confirmar` | Recepción, Administrador | PostgreSQL transacción | 200 | 403, 404, 409 |
 | PATCH | `/citas/{id}/reprogramar` | Propietario, Recepción | PostgreSQL transacción | 200 | 403, 404, 409 |
 | PUT | `/sesiones/filtros` | Usuario de sesión | Redis | 200 | 503 o degradación documentada |
 | GET | `/sesiones/filtros` | Usuario de sesión | Redis | 200 | 503 o degradación documentada |
@@ -186,7 +186,7 @@ La identidad del paciente se deriva del token verificado. Un paciente nunca pued
 {"cita_id":"...","estado":"PENDIENTE","cupo_anterior_id":42,"cupo_nuevo_id":43}
 ```
 
-El estado de respuesta es **provisional**: conservar `PENDIENTE` o `CONFIRMADA` según estado previo es una decisión pendiente. La operación debe ocupar el nuevo cupo y liberar el antiguo en una sola transacción, registrar explícitamente ambos identificadores en el evento y revertir todo ante conflicto (`409`). Bloquear las filas en orden fijo para reducir interbloqueos. Validar compatibilidad del profesional, servicio y franja.
+**Decisión implementada (Fase 4):** si reprograma recepción se conserva el estado; si reprograma el paciente, la cita vuelve a `PENDIENTE`. La operación debe ocupar el nuevo cupo y liberar el antiguo en una sola transacción, registrar explícitamente ambos identificadores en el evento y revertir todo ante conflicto (`409`). Bloquear las filas en orden fijo para reducir interbloqueos. Validar compatibilidad del profesional, servicio y franja.
 
 ## 7. Contrato de sesión (Redis)
 
@@ -220,7 +220,9 @@ El estado de respuesta es **provisional**: conservar `PENDIENTE` o `CONFIRMADA` 
 | PostgreSQL detenido | No confirmar reservas | Verificar `503`, sin crear citas inexistentes |
 | Reinicio de contenedores | Volúmenes recuperan catálogo, citas e índices persistidos | Reiniciar sin borrar volúmenes |
 
-## 9. Decisiones a cerrar antes de implementar (no inventar como hechos consumados)
+## 9. Decisiones a cerrar antes de implementar (cerradas en la Fase 4)
+
+> **Actualización (Fase 4):** estas decisiones ya se cerraron y se implementaron. Ver [fase4-implementacion.md](fase4-implementacion.md) §2 y la especificación OpenAPI. Se conserva el texto original como registro del diseño.
 
 1. **Identidad y roles:** dónde se almacenan cuentas ficticias, cómo se emiten/verifican tokens y qué rol puede crear usuarios. Debe existir validación real del lado API; no basta enviar un rol desde React.
 2. **Reprogramación:** preservar estado previo o volver a `PENDIENTE`; agregar los campos de cupo anterior/nuevo al evento de historial.

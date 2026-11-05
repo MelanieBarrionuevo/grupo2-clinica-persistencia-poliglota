@@ -4,6 +4,7 @@
 
 Crea:
 - Usuarios de demo (PostgreSQL): admin, recepcion, paciente1..3 · contraseña: Demo123!
+  (prueba1..3 son pacientes reservados para las pruebas automatizadas)
 - Catálogo (MongoDB, con eventos de outbox → el sincronizador los indexa en Typesense).
 - Franjas de los próximos días hábiles (PostgreSQL) para cada profesional sin agenda futura.
 """
@@ -27,6 +28,10 @@ USUARIOS = [
     ("pac-001", "paciente1", "Pablo Paciente", "PACIENTE"),
     ("pac-002", "paciente2", "Paula Paciente", "PACIENTE"),
     ("pac-003", "paciente3", "Pedro Paciente", "PACIENTE"),
+    # Pacientes exclusivos de las pruebas automatizadas: así sus citas no aparecen en las cuentas de la demo.
+    ("pac-t01", "prueba1", "Paciente de prueba 1", "PACIENTE"),
+    ("pac-t02", "prueba2", "Paciente de prueba 2", "PACIENTE"),
+    ("pac-t03", "prueba3", "Paciente de prueba 3", "PACIENTE"),
 ]
 
 ESPECIALIDADES = [

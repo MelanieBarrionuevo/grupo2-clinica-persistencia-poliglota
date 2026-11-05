@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { api, fmtHora, hoyLocal, nuevaClave } from '../api'
+import { api, diaLocal, fmtFecha, fmtHora, hoyLocal, nuevaClave } from '../api'
 import { Historial, Reprogramar } from '../citas'
 import { Aviso, Cargando, ErrorApi, Estado, Origen } from '../ui'
 
@@ -42,6 +42,20 @@ function Agenda({ profesionales, pacientes }) {
   }, [fecha, profesionalId])
   useEffect(cargar, [cargar])
 
+  // Al abrir el panel: si hoy no hay franjas, saltar al próximo día que sí tenga (leído de PostgreSQL).
+  const [ajustado, setAjustado] = useState(false)
+  useEffect(() => {
+    if (ajustado || !datos || datos.cupos.length > 0) return
+    setAjustado(true)
+    api('/cupos').then(r => {
+      const primero = r.cupos[0]
+      if (primero && diaLocal(primero.inicio) !== fecha) {
+        setFecha(diaLocal(primero.inicio))
+        setMensaje(`Hoy no hay franjas publicadas; se muestra el próximo día con agenda (${fmtFecha(primero.inicio)}).`)
+      }
+    }).catch(() => {})
+  }, [datos, ajustado, fecha])
+
   const alternar = (id, modo) => setAbierto(a => ({ ...a, [id]: a[id] === modo ? null : modo }))
 
   async function accion(ruta, texto) {
@@ -75,7 +89,7 @@ function Agenda({ profesionales, pacientes }) {
       </div>
       <Aviso tipo="exito" onCerrar={() => setMensaje(null)}>{mensaje}</Aviso>
       <ErrorApi error={error} onCerrar={() => setError(null)} />
-      {datos === null ? <Cargando /> : datos.cupos.length === 0 ? <p className="tenue">No hay franjas publicadas ese día.</p> : (
+      {datos === null ? <Cargando /> : datos.cupos.length === 0 ? <div className="vacio"><strong>No hay franjas publicadas ese día</strong>Elija otra fecha o publique franjas en la pestaña «Publicar franjas».</div> : (
         <table className="tabla">
           <thead><tr><th>Hora</th><th>Profesional</th><th>Sede · servicio</th><th>Franja</th><th>Cita</th><th></th></tr></thead>
           <tbody>
@@ -139,7 +153,7 @@ function Pendientes() {
   return (
     <section>
       <ErrorApi error={error} onCerrar={() => setError(null)} />
-      {citas === null ? <Cargando /> : citas.length === 0 ? <p className="tenue">No hay citas pendientes de confirmar.</p> : (
+      {citas === null ? <Cargando /> : citas.length === 0 ? <div className="vacio"><strong>No hay citas pendientes de confirmar</strong>Las reservas nuevas de los pacientes aparecerán aquí.</div> : (
         <table className="tabla">
           <thead><tr><th>Fecha</th><th>Paciente</th><th>Profesional</th><th>Servicio · sede</th><th></th></tr></thead>
           <tbody>

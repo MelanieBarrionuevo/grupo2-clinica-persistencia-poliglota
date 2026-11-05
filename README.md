@@ -62,6 +62,7 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 ├── docs/
 │   ├── fase1-comprension.md … fase5-validacion.md
 │   ├── api-contratos.md, openapi.json
+│   ├── informe/    Informe técnico (Word)
 │   ├── diagramas/
 │   ├── evidencias/ Pruebas de concepto (fase2) e informes y capturas de validación (fase5)
 │   └── enunciado/
@@ -77,8 +78,8 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 | 2. Investigación | Matriz argumentada de selección de gestores | Completada |
 | 3. Diseño | Modelo de datos, contratos de API, diagramas | Completada |
 | 4. Implementación | Repositorio ejecutable con Docker Compose | Completada · [docs/fase4-implementacion.md](docs/fase4-implementacion.md) |
-| 5. Validación | Pruebas y evidencias | En curso · [docs/fase5-validacion.md](docs/fase5-validacion.md) (falta la corrida oficial con Docker) |
-| 6. Defensa | Exposición y memoria técnica | Pendiente |
+| 5. Validación | Pruebas y evidencias | Completada · 44/44 pruebas con Docker · [docs/fase5-validacion.md](docs/fase5-validacion.md) |
+| 6. Defensa | Exposición y memoria técnica | Lista · guion en [docs/fase6-defensa.md](docs/fase6-defensa.md) |
 
 ## Ejecución
 
@@ -111,6 +112,7 @@ Contraseña de todos: **`Demo123!`** (también hay botones de acceso rápido en 
 | Usuario | Rol |
 | --- | --- |
 | `paciente1`, `paciente2`, `paciente3` | Paciente |
+| `prueba1`, `prueba2`, `prueba3` | Paciente reservado para las pruebas automatizadas (no usar en la demo) |
 | `recepcion` | Recepcionista |
 | `admin` | Administrador |
 
