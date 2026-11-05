@@ -173,7 +173,7 @@ docker compose exec api python -c "from app.db import busqueda; print(busqueda()
 | --- | --- | --- |
 | 1 | README con ejecución, credenciales, URLs, reinicio y limpieza | `README.md` |
 | 2 | Docker Compose, Dockerfiles, volúmenes y variables | `docker-compose.yml`, `*/Dockerfile`, `.env.example` |
-| 3 | Informe técnico | `docs/informe/` (Word) y `docs/fase1` a `fase5` |
+| 3 | Informe técnico | Se entrega por separado; el detalle está en docs/fase1 a fase5 |
 | 4 | Arquitectura, dos flujos end-to-end y tabla de consistencia | Informe, secciones 3, 5 y 6; `docs/diagramas/` |
 | 5 | Especificación de API | `docs/openapi.json` y `/docs` |
 | 6 | Web operativa | `web/` |
