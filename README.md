@@ -62,7 +62,6 @@ La selección está justificada en la Fase 2: [docs/fase2-investigacion.md](docs
 ├── docs/
 │   ├── fase1-comprension.md … fase5-validacion.md
 │   ├── api-contratos.md, openapi.json
-│   ├── informe/    Informe técnico (Word)
 │   ├── diagramas/
 │   ├── evidencias/ Pruebas de concepto (fase2) e informes y capturas de validación (fase5)
 │   └── enunciado/

@@ -1,7 +1,7 @@
 # Fase 6 · Defensa — Clínica ambulatoria
 
 **Grupo 2 · Daniel Guevara, Nicolás García, Camila Barrionuevo**
-**Producto de control:** exposición y memoria técnica (informe en [`docs/informe/`](informe/)).
+**Producto de control:** exposición y memoria técnica.
 
 Guion para los 15–20 minutos del §11 del enunciado. Cada bloque dice qué decir, qué mostrar y qué comando usar. El reparto de bloques es una propuesta: ajústenlo, pero que cada integrante presente al menos uno y los tres puedan responder cualquier pregunta.
 
